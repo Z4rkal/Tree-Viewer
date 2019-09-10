@@ -1,0 +1,37 @@
+{
+  "name": "tree-viewer",
+  "version": "0.0.1",
+  "description": "Writing my own PoE tree viewer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev-build": "NODE_ENV=development parcel build src/index.html",
+    "dev-watch": "NODE_ENV=development parcel watch src/index.html",
+    "dev": "NODE_ENV=development node ./server/index.js",
+    "start": "NODE_ENV=production node ./server/index.js",
+    "build": "NODE_ENV=production parcel build src/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Z4rkal/Tree-Viewer.git"
+  },
+  "keywords": [
+    "PoE"
+  ],
+  "author": "Olivia Reed",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Z4rkal/Tree-Viewer/issues"
+  },
+  "homepage": "https://github.com/Z4rkal/Tree-Viewer#readme",
+  "dependencies": {
+    "@babel/core": "^7.6.0",
+    "@babel/runtime": "^7.6.0",
+    "axios": "^0.19.0",
+    "babel-preset-react": "^6.24.1",
+    "express": "^4.17.1",
+    "parcel": "^1.12.3",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0"
+  }
+}

@@ -59,3 +59,17 @@ typings/
 
 # next.js build output
 .next
+
+# os x stuff
+lib-cov
+coverage
+.DS_Store
+logs
+.vscode
+
+# parcel output
+dist
+.cache
+
+# Tree Data
+TreeData/

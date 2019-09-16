@@ -168,8 +168,8 @@ class TreeBase extends Component {
                     //ctx.fillRect(group.x + xAdjust + 6 + 10, group.y + yAdjust + 6 + 10, 12, 12);
 
                     //To Do: draw images last so they don't get painted over by the lines
-                    let destWidth = coords.w * (1 / (1 + (Math.max(scale, 0.15) - 1) / 1.20));
-                    let destHeight = coords.h * (1 / (1 + (Math.max(scale, 0.15) - 1) / 1.20));
+                    let destWidth = coords.w / imageZoomLevels[zoomLvl];//(1 + ((1 / scale) - 1) / 1.5);
+                    let destHeight = coords.h / imageZoomLevels[zoomLvl];//(1 + ((1 / scale) - 1) / 1.5);
                     ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, group.x + xAdjust - (destWidth / 2), group.y + yAdjust - (destHeight / 2), destWidth, destHeight);
                     ctx.restore();
 

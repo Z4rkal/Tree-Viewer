@@ -125,8 +125,8 @@ class TreeBase extends Component {
         return 2 * Math.PI * orbitIndex / numOnOrbit
     }
 
-    updateCanvas(canX, canY) {
-        const { scale } = this.state;
+    updateCanvas(canX, canY, canScale) {
+        const scale = canScale || this.state.scale;
         const canvas = this.canvasRef.current;
         const ctx = canvas.getContext('2d');
 
@@ -134,20 +134,22 @@ class TreeBase extends Component {
         ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale * 5, 767 / 2 + canY * scale * 5);
         // ctx.fillRect(-25 + 525 / scale, -25 + 525 / scale, 50, 50);
 
+
+        let toDraw = [];
         Object.values(groups).map((group, groupIndex) => {
-            ctx.fillRect(group.x + 10, group.y + 10, 20, 20);
+            //ctx.fillRect(group.x + 10, group.y + 10, 20, 20);
             group.n.map((nodeId, gNIndex) => {
                 if (nodes[nodeId]) {
                     const node = nodes[nodeId];
                     const { icon, o, oidx } = node;
                     const { ks, not, m } = node;
                     const { zoomLvl } = this.state;
+                    const { out } = node;
 
                     const nodeType = (m ? 'mastery' : ks ? 'keystone' : not ? 'notable' : 'normal') + (!m ? 'Active' : '');
                     const srcId = (m ? 'groups-' : 'skills-') + `${zoomLvl}`;
 
                     const imgData = skillSprites[nodeType][zoomLvl];
-                    const fName = imgData.filename;
                     const coords = imgData.coords[icon];
 
                     const src = document.getElementById(`${srcId}`);
@@ -155,23 +157,107 @@ class TreeBase extends Component {
                     const radius = orbitRadii[o];
                     const numOnOrbit = skillsPerOrbit[o];
 
-                    // if (numOnOrbit === 40) {
-                    //     console.log(2 * Math.PI * (oidx / numOnOrbit), ` GGG func: `, this.getOrbitAngle(oidx, numOnOrbit));
-                    // }
+                    let ø = 90 * Math.PI / 180 - this.getOrbitAngle(oidx, numOnOrbit);
+                    //let ø = 90 * Math.PI / 180 - 2 * Math.PI * (oidx / numOnOrbit);
 
-                    let ø = 90 * Math.PI / 180 + this.getOrbitAngle(oidx, numOnOrbit); //2 * Math.PI * (oidx / numOnOrbit);
-
-                    let xAdjust = - radius * Math.cos(-ø);
+                    let xAdjust = radius * Math.cos(-ø);
                     let yAdjust = radius * Math.sin(-ø);
 
                     ctx.save();
                     ctx.fillStyle = '#f7c8d8';
                     //ctx.fillRect(group.x + xAdjust + 6 + 10, group.y + yAdjust + 6 + 10, 12, 12);
-                    ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, group.x + xAdjust - (coords.w / 2) + 10, group.y + yAdjust - (coords.h / 2) + 10, coords.w, coords.h);
+
+                    //To Do: draw images last so they don't get painted over by the lines
+                    ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, group.x + xAdjust - (coords.w / 2), group.y + yAdjust - (coords.h / 2), coords.w, coords.h);
                     ctx.restore();
+
+                    out.map((outId) => {
+                        ctx.save();
+                        ctx.lineWidth = 4;
+                        ctx.fillStyle = "rgba(200,0,0,.5)";
+                        ctx.strokeStyle = "rgba(150,150,0,.8)";
+
+                        const outNode = nodes[outId];
+                        if (outNode.g === node.g) {
+                            if (outNode.o === node.o) {
+                                let øOut = 90 * Math.PI / 180 - this.getOrbitAngle(outNode.oidx, numOnOrbit);
+                                ctx.beginPath();
+
+                                let clockDist = 0;
+                                let antiDist = 0;
+                                if (outNode.oidx > oidx) {
+                                    clockDist = outNode.oidx - oidx;
+                                    antiDist = numOnOrbit - clockDist;
+                                }
+                                else {
+                                    antiDist = oidx - outNode.oidx;
+                                    clockDist = numOnOrbit - antiDist;
+                                }
+
+                                if (clockDist > antiDist)
+                                    ctx.arc(group.x, group.y, radius, -ø, -øOut, true);
+                                else
+                                    ctx.arc(group.x, group.y, radius, -ø, -øOut);
+                                ctx.stroke();
+                            }
+                            else {
+                                const outRadius = orbitRadii[outNode.o];
+                                const outNumOnOrbit = skillsPerOrbit[outNode.o];
+
+                                let ø = 90 * Math.PI / 180 - this.getOrbitAngle(outNode.oidx, outNumOnOrbit);
+                                //let ø = 90 * Math.PI / 180 - 2 * Math.PI * (oidx / numOnOrbit);
+
+                                let outXAdjust = outRadius * Math.cos(-ø);
+                                let outYAdjust = outRadius * Math.sin(-ø);
+
+                                let outNodeX = group.x + outXAdjust;
+                                let outNodeY = group.y + outYAdjust;
+
+                                let nodeX = group.x + xAdjust;
+                                let nodeY = group.y + yAdjust;
+
+                                ctx.beginPath();
+                                ctx.moveTo(nodeX, nodeY);
+                                ctx.lineTo(outNodeX, outNodeY);
+                                ctx.stroke();
+                            }
+                        }
+                        else if (!((!outNode.ascendancyName && node.ascendancyName) || (outNode.ascendancyName && !node.ascendancyName))) {
+                            const outGroup = groups[outNode.g];
+
+                            const outRadius = orbitRadii[outNode.o];
+                            const outNumOnOrbit = skillsPerOrbit[outNode.o];
+
+                            let ø = 90 * Math.PI / 180 - this.getOrbitAngle(outNode.oidx, outNumOnOrbit);
+                            //let ø = 90 * Math.PI / 180 - 2 * Math.PI * (oidx / numOnOrbit);
+
+                            let outXAdjust = outRadius * Math.cos(-ø);
+                            let outYAdjust = outRadius * Math.sin(-ø);
+
+                            let outNodeX = outGroup.x + outXAdjust;
+                            let outNodeY = outGroup.y + outYAdjust;
+
+                            let nodeX = group.x + xAdjust;
+                            let nodeY = group.y + yAdjust;
+
+                            ctx.beginPath();
+                            ctx.moveTo(nodeX, nodeY);
+                            ctx.lineTo(outNodeX, outNodeY);
+                            ctx.stroke();
+                        }
+                        ctx.restore();
+                    });
                 }
             })
         });
+    }
+
+    drawLine() {
+
+    }
+
+    drawArc() {
+
     }
 
     startTracking(event) {
@@ -235,7 +321,7 @@ class TreeBase extends Component {
             zoomLvl: newZoom
         });
 
-        this.updateCanvas(canX, canY);
+        this.updateCanvas(canX, canY, newScale);
     }
 
     render() {
@@ -243,8 +329,8 @@ class TreeBase extends Component {
 
         return (
             <>
-                <div>{this.state.scale}</div>
-                <canvas width='916' height='767' ref={this.canvasRef} onWheel={(e) => this.handleZoom(e)} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }}>
+                <div id='zoom-debug'>{Math.floor(this.state.scale * 1000) / 1000}</div>
+                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => this.handleZoom(e)} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }}>
                     Sorry, your browser can't read canvas elements, normally the skill tree would render here :(
                 </canvas>
             </>

@@ -35,12 +35,14 @@ class SkillTree extends Component {
     render() {
         return (
             <>
-                <div id='asset-source'>
-                    {this.buildSprites('groups-', 4, '.png')}
-                    {this.buildSprites('skills-', 4, '.jpg')}
-                    {this.buildSprites('skills-disabled-', 4, '.jpg')}
+                <div id='tree-container'>
+                    <div id='asset-source'>
+                        {this.buildSprites('groups-', 4, '.png')}
+                        {this.buildSprites('skills-', 4, '.jpg')}
+                        {this.buildSprites('skills-disabled-', 4, '.jpg')}
+                    </div>
+                    <TreeBase />
                 </div>
-                <TreeBase />
             </>
         )
     }

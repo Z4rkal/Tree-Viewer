@@ -131,7 +131,7 @@ class TreeBase extends Component {
         const ctx = canvas.getContext('2d');
 
         ctx.clearRect(-20000, -20000, 40000, 40000);
-        ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale * 5, 767 / 2 + canY * scale * 5);
+        ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale * 2, 767 / 2 + canY * scale * 2);
         // ctx.fillRect(-25 + 525 / scale, -25 + 525 / scale, 50, 50);
 
 
@@ -272,10 +272,10 @@ class TreeBase extends Component {
     }
 
     stopTracking(event) {
-        const { canX, canY, downX, downY } = this.state;
+        const { canX, canY, downX, downY, scale } = this.state;
 
-        let offX = canX + event.nativeEvent.offsetX - downX;
-        let offY = canY + event.nativeEvent.offsetY - downY;
+        let offX = canX + (event.nativeEvent.offsetX - downX) / scale;
+        let offY = canY + (event.nativeEvent.offsetY - downY) / scale;
 
         this.setState({
             isDragging: false,
@@ -287,10 +287,10 @@ class TreeBase extends Component {
     }
 
     handleDrag(event) {
-        const { canX, canY, downX, downY } = this.state;
+        const { canX, canY, downX, downY, scale } = this.state;
 
-        let offX = canX + event.nativeEvent.offsetX - downX;
-        let offY = canY + event.nativeEvent.offsetY - downY;
+        let offX = canX + (event.nativeEvent.offsetX - downX) / scale;
+        let offY = canY + (event.nativeEvent.offsetY - downY) / scale;
 
         this.updateCanvas(offX, offY);
     }

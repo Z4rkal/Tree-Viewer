@@ -127,6 +127,7 @@ class TreeBase extends Component {
 
     updateCanvas(canX, canY, canScale) {
         const scale = canScale || this.state.scale;
+        const zoomLvl = canScale ? canScale < imageZoomLevels[0] ? 0 : canScale < imageZoomLevels[1] ? 1 : canScale < imageZoomLevels[2] ? 2 : 3 : this.state.zoomLvl;
         const canvas = this.canvasRef.current;
         const ctx = canvas.getContext('2d');
 
@@ -143,7 +144,6 @@ class TreeBase extends Component {
                     const node = nodes[nodeId];
                     const { icon, o, oidx } = node;
                     const { ks, not, m } = node;
-                    const { zoomLvl } = this.state;
                     const { out } = node;
 
                     const nodeType = (m ? 'mastery' : ks ? 'keystone' : not ? 'notable' : 'normal') + (!m ? 'Active' : '');
@@ -168,7 +168,9 @@ class TreeBase extends Component {
                     //ctx.fillRect(group.x + xAdjust + 6 + 10, group.y + yAdjust + 6 + 10, 12, 12);
 
                     //To Do: draw images last so they don't get painted over by the lines
-                    ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, group.x + xAdjust - (coords.w / 2), group.y + yAdjust - (coords.h / 2), coords.w, coords.h);
+                    let destWidth = coords.w * (1 / (1 + (Math.max(scale, 0.15) - 1) / 1.20));
+                    let destHeight = coords.h * (1 / (1 + (Math.max(scale, 0.15) - 1) / 1.20));
+                    ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, group.x + xAdjust - (destWidth / 2), group.y + yAdjust - (destHeight / 2), destWidth, destHeight);
                     ctx.restore();
 
                     out.map((outId) => {

@@ -231,7 +231,7 @@ class TreeBase extends Component {
         return (
             <>
                 <div id='zoom-debug'>{Math.floor(this.state.scale * 1000) / 1000}</div>
-                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => this.handleZoom(e)} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }}>
+                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => {if(!isDragging) this.handleZoom(e);}} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }}>
                     Sorry, your browser can't read canvas elements, normally the skill tree would render here :(
                 </canvas>
             </>

@@ -1,9 +1,10 @@
 import React, { Component } from 'React';
 
 import opts from '../../data/Tree';
-const { groups, nodes, constants } = opts.passiveSkillTreeData;
-const { skillsPerOrbit, orbitRadii } = constants;
+// const { groups, nodes, constants } = opts.passiveSkillTreeData;
+// const { skillsPerOrbit, orbitRadii } = constants;
 const { imageRoot, skillSprites, imageZoomLevels } = opts.passiveSkillTreeData;
+const { min_x, max_x, min_y, max_y } = opts.passiveSkillTreeData
 
 class TreeBase extends Component {
     constructor() {
@@ -22,236 +23,134 @@ class TreeBase extends Component {
         };
 
         this.canvasRef = React.createRef();
-        this.getOrbitAngle = this.getOrbitAngle.bind(this);
     }
 
-    componentDidMount() {
-        const { canX, canY } = this.state;
+    // componentDidMount() {
+    //     const { canX, canY } = this.state;
 
-        const canvas = this.canvasRef.current;
-        const ctx = canvas.getContext('2d');
+    //     const canvas = this.canvasRef.current;
+    //     const ctx = canvas.getContext('2d');
 
-        ctx.fillRect(canX + 500, canY + 500, 50, 50);
-    }
-
-    //const test = new CanvasRenderingContext2D();
-    //image drawing plan:
-    //ctx.drawImage('url(skills_0 etc)',dx,dy)
-
-    getOrbitAngle(orbitIndex, numOnOrbit) {
-        const degToRad = .017453293;
-        if (40 == numOnOrbit) switch (orbitIndex) {
-            case 0:
-                return this.getOrbitAngle(0, 12);
-            case 1:
-                return this.getOrbitAngle(0, 12) + 10 * degToRad;
-            case 2:
-                return this.getOrbitAngle(0, 12) + 20 * degToRad;
-            case 3:
-                return this.getOrbitAngle(1, 12);
-            case 4:
-                return this.getOrbitAngle(1, 12) + 10 * degToRad;
-            case 5:
-                return this.getOrbitAngle(1, 12) + 15 * degToRad;
-            case 6:
-                return this.getOrbitAngle(1, 12) + 20 * degToRad;
-            case 7:
-                return this.getOrbitAngle(2, 12);
-            case 8:
-                return this.getOrbitAngle(2, 12) + 10 * degToRad;
-            case 9:
-                return this.getOrbitAngle(2, 12) + 20 * degToRad;
-            case 10:
-                return this.getOrbitAngle(3, 12);
-            case 11:
-                return this.getOrbitAngle(3, 12) + 10 * degToRad;
-            case 12:
-                return this.getOrbitAngle(3, 12) + 20 * degToRad;
-            case 13:
-                return this.getOrbitAngle(4, 12);
-            case 14:
-                return this.getOrbitAngle(4, 12) + 10 * degToRad;
-            case 15:
-                return this.getOrbitAngle(4, 12) + 15 * degToRad;
-            case 16:
-                return this.getOrbitAngle(4, 12) + 20 * degToRad;
-            case 17:
-                return this.getOrbitAngle(5, 12);
-            case 18:
-                return this.getOrbitAngle(5, 12) + 10 * degToRad;
-            case 19:
-                return this.getOrbitAngle(5, 12) + 20 * degToRad;
-            case 20:
-                return this.getOrbitAngle(6, 12);
-            case 21:
-                return this.getOrbitAngle(6, 12) + 10 * degToRad;
-            case 22:
-                return this.getOrbitAngle(6, 12) + 20 * degToRad;
-            case 23:
-                return this.getOrbitAngle(7, 12);
-            case 24:
-                return this.getOrbitAngle(7, 12) + 10 * degToRad;
-            case 25:
-                return this.getOrbitAngle(7, 12) + 15 * degToRad;
-            case 26:
-                return this.getOrbitAngle(7, 12) + 20 * degToRad;
-            case 27:
-                return this.getOrbitAngle(8, 12);
-            case 28:
-                return this.getOrbitAngle(8, 12) + 10 * degToRad;
-            case 29:
-                return this.getOrbitAngle(8, 12) + 20 * degToRad;
-            case 30:
-                return this.getOrbitAngle(9, 12);
-            case 31:
-                return this.getOrbitAngle(9, 12) + 10 * degToRad;
-            case 32:
-                return this.getOrbitAngle(9, 12) + 20 * degToRad;
-            case 33:
-                return this.getOrbitAngle(10, 12);
-            case 34:
-                return this.getOrbitAngle(10, 12) + 10 * degToRad;
-            case 35:
-                return this.getOrbitAngle(10, 12) + 15 * degToRad;
-            case 36:
-                return this.getOrbitAngle(10, 12) + 20 * degToRad;
-            case 37:
-                return this.getOrbitAngle(11, 12);
-            case 38:
-                return this.getOrbitAngle(11, 12) + 10 * degToRad;
-            case 39:
-                return this.getOrbitAngle(11, 12) + 20 * degToRad
-        }
-        return 2 * Math.PI * orbitIndex / numOnOrbit
-    }
+    //     ctx.fillRect(canX + 500, canY + 500, 50, 50);
+    // }
 
     updateCanvas(canX, canY, canScale) {
-        const scale = canScale || this.state.scale;
-        const zoomLvl = canScale ? canScale < imageZoomLevels[0] ? 0 : canScale < imageZoomLevels[1] ? 1 : canScale < imageZoomLevels[2] ? 2 : 3 : this.state.zoomLvl;
-        const canvas = this.canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        const { groups, nodes } = this.props;
 
-        ctx.clearRect(-20000, -20000, 40000, 40000);
-        ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale * 2, 767 / 2 + canY * scale * 2);
-        // ctx.fillRect(-25 + 525 / scale, -25 + 525 / scale, 50, 50);
+        /* new node properties
+        //Should deep clone the node and any objects we're putting in to it to avoid side effects
+        //delete ourNodes[nodeId].icon;
+        ourNodes[nodeId].srcRoot = srcRoot;
+        ourNodes[nodeId].nodeType = nodeType;
+        ourNodes[nodeId].nX = nodeX;
+        ourNodes[nodeId].nY = nodeY;
+        //ourNodes[nodeId].coords = coords;
+        ourNodes[nodeId].ø = ø;
+        ourNodes[nodeId].fullString = fullString;
+        ourNodes[nodeId].active = !m ? false : null;
+        ourNodes[nodeId].arcs = arcs;
+        ourNodes[nodeId].paths = paths;
+        */
 
 
-        let toDraw = [];
-        Object.values(groups).map((group, groupIndex) => {
-            //ctx.fillRect(group.x + 10, group.y + 10, 20, 20);
-            group.n.map((nodeId, gNIndex) => {
-                if (nodes[nodeId]) {
-                    const node = nodes[nodeId];
-                    const { icon, o, oidx } = node;
-                    const { ks, not, m } = node;
-                    const { out } = node;
+        if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
+            const scale = canScale || this.state.scale;
+            const zoomLvl = canScale ? canScale < imageZoomLevels[0] ? 0 : canScale < imageZoomLevels[1] ? 1 : canScale < imageZoomLevels[2] ? 2 : 3 : this.state.zoomLvl;
+            const canvas = this.canvasRef.current;
+            const ctx = canvas.getContext('2d');
 
-                    const nodeType = (m ? 'mastery' : ks ? 'keystone' : not ? 'notable' : 'normal') + (!m ? 'Active' : '');
-                    const srcId = (m ? 'groups-' : 'skills-') + `${zoomLvl}`;
+            ctx.clearRect(min_x - 1000, min_y - 1000, max_x - min_x + 2000, max_y - min_y + 2000);
+            ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale * 2, 767 / 2 + canY * scale * 2);
 
-                    const imgData = skillSprites[nodeType][zoomLvl];
-                    const coords = imgData.coords[icon];
+            Object.values(groups).map((group, groupIndex) => {
+                //ctx.fillRect(group.x + 10, group.y + 10, 20, 20);
+                group.n.map((nodeId, gNIndex) => {
+                    if (nodes[nodeId]) {
+                        const node = nodes[nodeId];
+                        const { icon, srcRoot, nX, nY } = node;
+                        const { nodeType, active } = node;
+                        const { arcs, paths } = node;
 
-                    const src = document.getElementById(`${srcId}`);
+                        const spriteType = active !== null ? nodeType + (active ? 'Active' : 'Inactive') : nodeType;
+                        const srcId = srcRoot + `${zoomLvl}`;
 
-                    const radius = orbitRadii[o];
-                    const numOnOrbit = skillsPerOrbit[o];
+                        const imgData = skillSprites[spriteType][zoomLvl];
+                        const coords = imgData.coords[icon];
 
-                    let ø = 90 * Math.PI / 180 - this.getOrbitAngle(oidx, numOnOrbit);
-                    //let ø = 90 * Math.PI / 180 - 2 * Math.PI * (oidx / numOnOrbit);
+                        const src = document.getElementById(`${srcId}`);
 
-                    let xAdjust = radius * Math.cos(-ø);
-                    let yAdjust = radius * Math.sin(-ø);
+                        // const radius = orbitRadii[o];
+                        // const numOnOrbit = skillsPerOrbit[o];
 
-                    ctx.save();
-                    ctx.fillStyle = '#f7c8d8';
-                    //ctx.fillRect(group.x + xAdjust + 6 + 10, group.y + yAdjust + 6 + 10, 12, 12);
+                        // let ø = 90 * Math.PI / 180 - this.getOrbitAngle(oidx, numOnOrbit);
+                        // //let ø = 90 * Math.PI / 180 - 2 * Math.PI * (oidx / numOnOrbit);
 
-                    //To Do: draw images last so they don't get painted over by the lines
-                    let destWidth = coords.w / imageZoomLevels[zoomLvl];//(1 + ((1 / scale) - 1) / 1.5);
-                    let destHeight = coords.h / imageZoomLevels[zoomLvl];//(1 + ((1 / scale) - 1) / 1.5);
-                    ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, group.x + xAdjust - (destWidth / 2), group.y + yAdjust - (destHeight / 2), destWidth, destHeight);
-                    ctx.restore();
+                        // let xAdjust = radius * Math.cos(-ø);
+                        // let yAdjust = radius * Math.sin(-ø);
 
-                    out.map((outId) => {
                         ctx.save();
-                        ctx.lineWidth = 4;
-                        ctx.fillStyle = "rgba(200,0,0,.5)";
-                        ctx.strokeStyle = "rgba(150,150,0,.8)";
+                        ctx.fillStyle = '#f7c8d8';
+                        //ctx.fillRect(group.x + xAdjust + 6 + 10, group.y + yAdjust + 6 + 10, 12, 12);
 
-                        const outNode = nodes[outId];
-                        if (outNode.g === node.g) {
-                            if (outNode.o === node.o) {
-                                let øOut = 90 * Math.PI / 180 - this.getOrbitAngle(outNode.oidx, numOnOrbit);
-                                ctx.beginPath();
+                        //To Do: draw images last so they don't get painted over by the lines
+                        let destWidth = coords.w / imageZoomLevels[zoomLvl];//(1 + ((1 / scale) - 1) / 1.5);
+                        let destHeight = coords.h / imageZoomLevels[zoomLvl];//(1 + ((1 / scale) - 1) / 1.5);
 
-                                let clockDist = 0;
-                                let antiDist = 0;
-                                if (outNode.oidx > oidx) {
-                                    clockDist = outNode.oidx - oidx;
-                                    antiDist = numOnOrbit - clockDist;
-                                }
-                                else {
-                                    antiDist = oidx - outNode.oidx;
-                                    clockDist = numOnOrbit - antiDist;
-                                }
+                        ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, nX - (destWidth / 2), nY - (destHeight / 2), destWidth, destHeight);
+                        ctx.restore();
 
-                                if (clockDist > antiDist)
-                                    ctx.arc(group.x, group.y, radius, -ø, -øOut, true);
-                                else
-                                    ctx.arc(group.x, group.y, radius, -ø, -øOut);
-                                ctx.stroke();
-                            }
-                            else {
-                                const outRadius = orbitRadii[outNode.o];
-                                const outNumOnOrbit = skillsPerOrbit[outNode.o];
+                        arcs.map((arc) => {
+                            ctx.save();
+                            ctx.globalCompositeOperation = 'destination-over';
+                            ctx.lineWidth = 4;
+                            ctx.fillStyle = "rgba(200,0,0,.5)";
+                            ctx.strokeStyle = "rgba(150,150,0,.8)";
 
-                                let ø = 90 * Math.PI / 180 - this.getOrbitAngle(outNode.oidx, outNumOnOrbit);
-                                //let ø = 90 * Math.PI / 180 - 2 * Math.PI * (oidx / numOnOrbit);
+                            // arcs[arcId] = {
+                            //     x: group.x,
+                            //     y: group.y,
+                            //     radius,
+                            //     øStart: -ø,
+                            //     øEnd: -øOut,
+                            //     aClock: true
+                            // };
 
-                                let outXAdjust = outRadius * Math.cos(-ø);
-                                let outYAdjust = outRadius * Math.sin(-ø);
-
-                                let outNodeX = group.x + outXAdjust;
-                                let outNodeY = group.y + outYAdjust;
-
-                                let nodeX = group.x + xAdjust;
-                                let nodeY = group.y + yAdjust;
-
-                                ctx.beginPath();
-                                ctx.moveTo(nodeX, nodeY);
-                                ctx.lineTo(outNodeX, outNodeY);
-                                ctx.stroke();
-                            }
-                        }
-                        else if (!((!outNode.ascendancyName && node.ascendancyName) || (outNode.ascendancyName && !node.ascendancyName))) {
-                            const outGroup = groups[outNode.g];
-
-                            const outRadius = orbitRadii[outNode.o];
-                            const outNumOnOrbit = skillsPerOrbit[outNode.o];
-
-                            let ø = 90 * Math.PI / 180 - this.getOrbitAngle(outNode.oidx, outNumOnOrbit);
-                            //let ø = 90 * Math.PI / 180 - 2 * Math.PI * (oidx / numOnOrbit);
-
-                            let outXAdjust = outRadius * Math.cos(-ø);
-                            let outYAdjust = outRadius * Math.sin(-ø);
-
-                            let outNodeX = outGroup.x + outXAdjust;
-                            let outNodeY = outGroup.y + outYAdjust;
-
-                            let nodeX = group.x + xAdjust;
-                            let nodeY = group.y + yAdjust;
+                            const { x, y, radius, øStart, øEnd, aClock } = arc;
 
                             ctx.beginPath();
-                            ctx.moveTo(nodeX, nodeY);
-                            ctx.lineTo(outNodeX, outNodeY);
+                            ctx.arc(x, y, radius, øStart, øEnd, aClock);
                             ctx.stroke();
-                        }
-                        ctx.restore();
-                    });
-                }
-            })
-        });
+
+                            ctx.restore();
+                        });
+
+                        paths.map((path) => {
+                            ctx.save();
+                            ctx.globalCompositeOperation = 'destination-over';
+                            ctx.lineWidth = 4;
+                            ctx.fillStyle = "rgba(200,0,0,.5)";
+                            ctx.strokeStyle = "rgba(150,150,0,.8)";
+
+                            // paths[pathId] = {
+                            //     x1: nodeX,
+                            //     y1: nodeY,
+                            //     x2: outNodeX,
+                            //     y2: outNodeY
+                            // }
+
+                            const { x1, y1, x2, y2 } = path;
+
+                            ctx.beginPath();
+                            ctx.moveTo(x1, y1);
+                            ctx.lineTo(x2, y2);
+                            ctx.stroke();
+
+                            ctx.restore();
+                        })
+                    }
+                })
+            });
+        }
     }
 
     drawLine() {

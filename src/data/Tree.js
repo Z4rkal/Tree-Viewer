@@ -9842,7 +9842,8 @@ const passiveSkillTreeData = {
         }
 
     },
-    "min_x": -10524, "min_y": -7797, "max_x": 9303, "max_y": 8284, "assets": {
+    "min_x": -10524, "min_y": -7797, "max_x": 9303, "max_y": 8284, 
+    "assets": {
         "PSSkillFrame": {
             "0.1246": "\/gen\/image\/WzIyLDE0LHsidCI6MCwic3AiOjAuMTI0Nn1d\/4874910c47\/Skill_Frame_Unallocated.png", "0.2109": "\/gen\/image\/WzIyLDE0LHsidCI6MCwic3AiOjAuMjEwOX1d\/3e5b817806\/Skill_Frame_Unallocated.png", "0.2972": "\/gen\/image\/WzIyLDE0LHsidCI6MCwic3AiOjAuMjk3Mn1d\/157ccd3eb9\/Skill_Frame_Unallocated.png", "0.3835": "\/gen\/image\/WzIyLDE0LHsidCI6MCwic3AiOjAuMzgzNX1d\/31b37b4c99\/Skill_Frame_Unallocated.png"
         },

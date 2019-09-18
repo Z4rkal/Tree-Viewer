@@ -9,6 +9,7 @@ import opts from '../../data/Tree';
 const { groups, nodes, constants } = opts.passiveSkillTreeData;
 const { skillsPerOrbit, orbitRadii } = constants;
 const { imageRoot, skillSprites, imageZoomLevels } = opts.passiveSkillTreeData;
+const { min_x, max_x, min_y, max_y } = opts.passiveSkillTreeData;
 
 class SkillTree extends Component {
     constructor() {
@@ -16,7 +17,9 @@ class SkillTree extends Component {
 
         this.state = {
             groups: {},
-            nodes: {}
+            nodes: {},
+            hitPoints: {},
+            sizeConstants: {}
             // canX: 0,
             // canY: 0,
             // scale: 1,
@@ -27,18 +30,22 @@ class SkillTree extends Component {
             // offX: 0,
             // offY: 0
         };
-        
-        this.buildNodes = this.buildNodes.bind(this);
+
+        this.buildNodes = this.handlePreCalcs.bind(this);
     }
 
     componentDidMount() {
-        this.buildNodes();
+        this.handlePreCalcs();
     }
 
-    buildNodes() {
+    handlePreCalcs() {
         let ourGroups = {};
         let ourNodes = {};
+        let hitPoints = {};
 
+        let normal = false;
+        let notable = false;
+        let keystone = false;
         Object.entries(groups).map(([groupKey, group]/*,groupIndex*/) => {
             ourGroups[groupKey] = groups[groupKey]; //Should do a deep clone probably
 
@@ -81,6 +88,54 @@ class SkillTree extends Component {
                     const srcRoot = (m ? 'groups-' : 'skills-');// + `${zoomLvl}`;
 
                     //const coords = skillSprites[nodeType][zoomLvl].coords[icon];
+                    let z0, z1, z2, z3;
+                    if (!m) {
+                        z0 = { ...skillSprites[`${nodeType}Active`][0].coords[icon] };
+
+                        z1 = { ...skillSprites[`${nodeType}Active`][1].coords[icon] };
+
+                        z2 = { ...skillSprites[`${nodeType}Active`][2].coords[icon] };
+
+                        z3 = { ...skillSprites[`${nodeType}Active`][3].coords[icon] };
+                    }
+                    else {
+                        z0 = { ...skillSprites[`${nodeType}`][0].coords[icon] };
+
+                        z1 = { ...skillSprites[`${nodeType}`][1].coords[icon] };
+
+                        z2 = { ...skillSprites[`${nodeType}`][2].coords[icon] };
+
+                        z3 = { ...skillSprites[`${nodeType}`][3].coords[icon] };
+                    }
+
+                    //Get node size measurments for hit calculations
+                    if (!normal && nodeType === 'normal') {
+                        normal = {
+                            z0: { w: Math.round(z0.w / imageZoomLevels[0]), h: Math.round(z0.h / imageZoomLevels[0]) },
+                            z1: { w: Math.round(z1.w / imageZoomLevels[1]), h: Math.round(z1.h / imageZoomLevels[1]) },
+                            z2: { w: Math.round(z2.w / imageZoomLevels[2]), h: Math.round(z2.h / imageZoomLevels[2]) },
+                            z3: { w: Math.round(z3.w / imageZoomLevels[3]), h: Math.round(z3.h / imageZoomLevels[3]) }
+                        }
+                        //console.log('normal', normal);
+                    }
+                    if (!notable && nodeType === 'notable') {
+                        notable = {
+                            z0: { w: Math.round(z0.w / imageZoomLevels[0]), h: Math.round(z0.h / imageZoomLevels[0]) },
+                            z1: { w: Math.round(z1.w / imageZoomLevels[1]), h: Math.round(z1.h / imageZoomLevels[1]) },
+                            z2: { w: Math.round(z2.w / imageZoomLevels[2]), h: Math.round(z2.h / imageZoomLevels[2]) },
+                            z3: { w: Math.round(z3.w / imageZoomLevels[3]), h: Math.round(z3.h / imageZoomLevels[3]) }
+                        }
+                        //console.log('notable', notable);
+                    }
+                    if (!keystone && nodeType === 'keystone') {
+                        keystone = {
+                            z0: { w: Math.round(z0.w / imageZoomLevels[0]), h: Math.round(z0.h / imageZoomLevels[0]) },
+                            z1: { w: Math.round(z1.w / imageZoomLevels[1]), h: Math.round(z1.h / imageZoomLevels[1]) },
+                            z2: { w: Math.round(z2.w / imageZoomLevels[2]), h: Math.round(z2.h / imageZoomLevels[2]) },
+                            z3: { w: Math.round(z3.w / imageZoomLevels[3]), h: Math.round(z3.h / imageZoomLevels[3]) }
+                        }
+                        //console.log('keystone', keystone);
+                    }
 
                     const radius = orbitRadii[o];
                     const numOnOrbit = skillsPerOrbit[o];
@@ -90,18 +145,27 @@ class SkillTree extends Component {
                     let xAdjust = radius * Math.cos(-ø);
                     let yAdjust = radius * Math.sin(-ø);
 
-                    let nodeX = group.x + xAdjust;
-                    let nodeY = group.y + yAdjust;
+                    let nX = group.x + xAdjust;
+                    let nY = group.y + yAdjust;
 
                     let fullString = [nodeType, node.dn, node.sd.join(' ')].join(' ');
 
+                    if (!m) { //No hitboxes for mastery sprites
+                        //Build hitboxes, just use a single point to save memory
+                        let intX = Math.round(nX);
+                        let intY = Math.round(nY);
+
+                        if (!hitPoints[intX]) hitPoints[intX] = {};
+                        hitPoints[intX][intY] = nodeType;
+                    }
+
+
                     //Should deep clone the node and any objects we're putting in to it to avoid side effects
-                    //delete ourNodes[nodeId].icon;
                     ourNodes[nodeId].srcRoot = srcRoot;
                     ourNodes[nodeId].nodeType = nodeType;
-                    ourNodes[nodeId].nX = nodeX;
-                    ourNodes[nodeId].nY = nodeY;
-                    //ourNodes[nodeId].coords = coords;
+                    ourNodes[nodeId].nX = nX;
+                    ourNodes[nodeId].nY = nY;
+                    ourNodes[nodeId].coords = [z0, z1, z2, z3];
                     ourNodes[nodeId].ø = ø;
                     ourNodes[nodeId].fullString = fullString;
                     ourNodes[nodeId].active = !m ? false : null;
@@ -163,8 +227,8 @@ class SkillTree extends Component {
                                 let outNodeY = group.y + outYAdjust;
 
                                 paths[pathId] = {
-                                    x1: nodeX,
-                                    y1: nodeY,
+                                    x1: nX,
+                                    y1: nY,
                                     x2: outNodeX,
                                     y2: outNodeY
                                 }
@@ -187,8 +251,8 @@ class SkillTree extends Component {
                             let outNodeY = outGroup.y + outYAdjust;
 
                             paths[pathId] = {
-                                x1: nodeX,
-                                y1: nodeY,
+                                x1: nX,
+                                y1: nY,
                                 x2: outNodeX,
                                 y2: outNodeY
                             }
@@ -203,20 +267,42 @@ class SkillTree extends Component {
             })
         });
 
+        let widest = 0;
+        let tallest = 0;
+
+        for (let i = 0; i < 4; i++) {
+            if (normal[`z${i}`].w > widest) widest = normal[`z${i}`].w;
+            if (normal[`z${i}`].h > tallest) tallest = normal[`z${i}`].h;
+            if (notable[`z${i}`].w > widest) widest = notable[`z${i}`].w;
+            if (notable[`z${i}`].h > tallest) tallest = notable[`z${i}`].h;
+            if (keystone[`z${i}`].w > widest) widest = keystone[`z${i}`].w;
+            if (keystone[`z${i}`].h > tallest) tallest = keystone[`z${i}`].h;
+        }
+
+        //console.log(`Widest: ${widest}, Tallest: ${tallest}`);
+
         this.setState({
             groups: ourGroups,
-            nodes: ourNodes
+            nodes: ourNodes,
+            hitPoints: hitPoints,
+            sizeConstants: {
+                widest: widest,
+                tallest: tallest,
+                normal: normal,
+                notable: notable,
+                keystone: keystone
+            }
         });
     }
 
     render() {
-        const { groups, nodes } = this.state;
+        const { groups, nodes, hitPoints, sizeConstants } = this.state;
 
         return (
             <>
                 <div id='tree-container'>
                     <ImageSource />
-                    <TreeBase groups={groups} nodes={nodes}/>
+                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} />
                 </div>
             </>
         )

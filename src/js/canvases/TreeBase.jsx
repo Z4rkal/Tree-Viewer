@@ -64,7 +64,7 @@ class TreeBase extends Component {
 
             Object.values(groups).map((group, groupIndex) => {
                 //ctx.fillRect(group.x + 10, group.y + 10, 20, 20);
-                group.n.map((nodeId, gNIndex) => {
+                group.n.map((nodeId, nodeIndex) => {
                     if (nodes[nodeId]) {
                         const node = nodes[nodeId];
                         const { icon, srcRoot, nX, nY } = node;
@@ -225,13 +225,46 @@ class TreeBase extends Component {
         this.updateCanvas(canX, canY, newScale);
     }
 
+    checkHit(event) {
+        const { canX, canY, scale, zoomLvl } = this.state;
+        const { hitPoints } = this.props;
+        const { widest, tallest, normal, notable, keystone } = this.props.sizeConstants;
+
+        let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale - canX);
+        let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale - canY);
+
+        for (let x = -(Math.floor(widest / 2)); x < Math.ceil(widest / 2); x++) { //Widest is 100, so 100/2 is 50 units at most
+            if (hitPoints[offX + x]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
+                for (let y = -(Math.floor(tallest / 2)); y < Math.ceil(tallest / 2); y++) { //Tallest is 100
+                    if (hitPoints[offX + x][offY + y]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
+                        switch (hitPoints[offX + x][offY + y]) {
+                            case 'normal':
+                                if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2))
+                                    console.log(`Hit! ${hitPoints[offX + x][offY + y]}`);
+                                break;
+                            case 'notable':
+                                if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2))
+                                    console.log(`Hit! ${hitPoints[offX + x][offY + y]}`);
+                                break;
+                            case 'keystone':
+                                if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2))
+                                    console.log(`Hit! ${hitPoints[offX + x][offY + y]}`);
+                                break;
+                            default: throw new Error(`Bad hit point value in checkHit`);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     render() {
         const { isDragging } = this.state;
 
         return (
             <>
                 <div id='zoom-debug'>{Math.floor(this.state.scale * 1000) / 1000}</div>
-                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => {if(!isDragging) this.handleZoom(e);}} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }}>
+                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) this.handleZoom(e); }} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); } else { this.checkHit(e) }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }}>
                     Sorry, your browser can't read canvas elements, normally the skill tree would render here :(
                 </canvas>
             </>

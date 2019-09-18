@@ -32,6 +32,7 @@ class SkillTree extends Component {
         };
 
         this.buildNodes = this.handlePreCalcs.bind(this);
+        this.handleNodeClick = this.handleNodeClick.bind(this);
     }
 
     componentDidMount() {
@@ -156,7 +157,7 @@ class SkillTree extends Component {
                         let intY = Math.round(nY);
 
                         if (!hitPoints[intX]) hitPoints[intX] = {};
-                        hitPoints[intX][intY] = nodeType;
+                        hitPoints[intX][intY] = nodeId;
                     }
 
 
@@ -295,6 +296,16 @@ class SkillTree extends Component {
         });
     }
 
+    handleNodeClick(nodeId) {
+        const { nodes } = this.state;
+
+        if (nodes[nodeId]) {
+            this.setState((state) => {
+                return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } } }
+            });
+        }
+    }
+
     render() {
         const { groups, nodes, hitPoints, sizeConstants } = this.state;
 
@@ -302,7 +313,7 @@ class SkillTree extends Component {
             <>
                 <div id='tree-container'>
                     <ImageSource />
-                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} />
+                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} handleNodeClick={this.handleNodeClick} />
                 </div>
             </>
         )

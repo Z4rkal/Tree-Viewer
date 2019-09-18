@@ -72,7 +72,7 @@ class TreeBase extends Component {
                         const { arcs, paths } = node;
 
                         const spriteType = active !== null ? nodeType + (active ? 'Active' : 'Inactive') : nodeType;
-                        const srcId = srcRoot + `${zoomLvl}`;
+                        const srcId = srcRoot + (active === null || active ? '' : 'disabled-') + `${zoomLvl}`;
 
                         const imgData = skillSprites[spriteType][zoomLvl];
                         const coords = imgData.coords[icon];
@@ -227,8 +227,9 @@ class TreeBase extends Component {
 
     checkHit(event) {
         const { canX, canY, scale, zoomLvl } = this.state;
-        const { hitPoints } = this.props;
+        const { hitPoints, nodes } = this.props;
         const { widest, tallest, normal, notable, keystone } = this.props.sizeConstants;
+        const { handleNodeClick } = this.props;
 
         let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale - canX);
         let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale - canY);
@@ -236,19 +237,19 @@ class TreeBase extends Component {
         for (let x = -(Math.floor(widest / 2)); x < Math.ceil(widest / 2); x++) { //Widest is 100, so 100/2 is 50 units at most
             if (hitPoints[offX + x]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
                 for (let y = -(Math.floor(tallest / 2)); y < Math.ceil(tallest / 2); y++) { //Tallest is 100
-                    if (hitPoints[offX + x][offY + y]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
-                        switch (hitPoints[offX + x][offY + y]) {
+                    if (hitPoints[offX + x][offY + y] && nodes[hitPoints[offX + x][offY + y]]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
+                        switch (nodes[hitPoints[offX + x][offY + y]].nodeType) {
                             case 'normal':
                                 if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2))
-                                    console.log(`Hit! ${hitPoints[offX + x][offY + y]}`);
+                                    handleNodeClick(hitPoints[offX + x][offY + y]);//console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
                                 break;
                             case 'notable':
                                 if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2))
-                                    console.log(`Hit! ${hitPoints[offX + x][offY + y]}`);
+                                    console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
                                 break;
                             case 'keystone':
                                 if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2))
-                                    console.log(`Hit! ${hitPoints[offX + x][offY + y]}`);
+                                    console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
                                 break;
                             default: throw new Error(`Bad hit point value in checkHit`);
                         }
@@ -264,7 +265,7 @@ class TreeBase extends Component {
         return (
             <>
                 <div id='zoom-debug'>{Math.floor(this.state.scale * 1000) / 1000}</div>
-                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) this.handleZoom(e); }} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); } else { this.checkHit(e) }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }}>
+                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) this.handleZoom(e); }} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); } else { this.checkHit(e) }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }} onClick={(e) => this.checkHit(e)}>
                     Sorry, your browser can't read canvas elements, normally the skill tree would render here :(
                 </canvas>
             </>

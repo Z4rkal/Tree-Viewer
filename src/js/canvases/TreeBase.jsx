@@ -34,24 +34,13 @@ class TreeBase extends Component {
     //     ctx.fillRect(canX + 500, canY + 500, 50, 50);
     // }
 
+    componentDidUpdate() {
+        const { canX, canY } = this.state;
+        this.updateCanvas(canX, canY);
+    }
+
     updateCanvas(canX, canY, canScale) {
         const { groups, nodes } = this.props;
-
-        /* new node properties
-        //Should deep clone the node and any objects we're putting in to it to avoid side effects
-        //delete ourNodes[nodeId].icon;
-        ourNodes[nodeId].srcRoot = srcRoot;
-        ourNodes[nodeId].nodeType = nodeType;
-        ourNodes[nodeId].nX = nodeX;
-        ourNodes[nodeId].nY = nodeY;
-        //ourNodes[nodeId].coords = coords;
-        ourNodes[nodeId].ø = ø;
-        ourNodes[nodeId].fullString = fullString;
-        ourNodes[nodeId].active = !m ? false : null;
-        ourNodes[nodeId].arcs = arcs;
-        ourNodes[nodeId].paths = paths;
-        */
-
 
         if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
             const scale = canScale || this.state.scale;
@@ -225,11 +214,10 @@ class TreeBase extends Component {
         this.updateCanvas(canX, canY, newScale);
     }
 
-    checkHit(event) {
+    checkHit(event, cb) {
         const { canX, canY, scale, zoomLvl } = this.state;
         const { hitPoints, nodes } = this.props;
         const { widest, tallest, normal, notable, keystone } = this.props.sizeConstants;
-        const { handleNodeClick } = this.props;
 
         let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale - canX);
         let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale - canY);
@@ -240,32 +228,40 @@ class TreeBase extends Component {
                     if (hitPoints[offX + x][offY + y] && nodes[hitPoints[offX + x][offY + y]]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
                         switch (nodes[hitPoints[offX + x][offY + y]].nodeType) {
                             case 'normal':
-                                if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2))
-                                    handleNodeClick(hitPoints[offX + x][offY + y]);//console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
-                                break;
+                                if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2)) {
+                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
+                                    return true;//handleNodeClick(hitPoints[offX + x][offY + y]);//console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                }
+                                return false;
                             case 'notable':
-                                if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2))
-                                    console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
-                                break;
+                                if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2)) {
+                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
+                                    return true; //console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                }
+                                return false;
                             case 'keystone':
-                                if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2))
-                                    console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
-                                break;
+                                if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2)) {
+                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
+                                    return true; //console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                }
+                                return false;
                             default: throw new Error(`Bad hit point value in checkHit`);
                         }
                     }
                 }
             }
         }
+        return false;
     }
 
     render() {
         const { isDragging } = this.state;
+        const { handleNodeClick } = this.props;
 
         return (
             <>
                 <div id='zoom-debug'>{Math.floor(this.state.scale * 1000) / 1000}</div>
-                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) this.handleZoom(e); }} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); } else { this.checkHit(e) }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }} onClick={(e) => this.checkHit(e)}>
+                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) this.handleZoom(e); }} onMouseDown={(e) => this.startTracking(e)} onMouseMove={(e) => { if (isDragging) { this.handleDrag(e); } else { this.checkHit(e, () => console.log('Hit!')) }; }} onMouseUp={(e) => { if (isDragging) { this.stopTracking(e); }; }} onMouseLeave={(e) => { if (isDragging) { this.stopTracking(e); }; }} onClick={(e) => this.checkHit(e, handleNodeClick)}>
                     Sorry, your browser can't read canvas elements, normally the skill tree would render here :(
                 </canvas>
             </>

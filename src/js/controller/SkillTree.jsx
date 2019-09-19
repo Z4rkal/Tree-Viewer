@@ -19,19 +19,22 @@ class SkillTree extends Component {
             groups: {},
             nodes: {},
             hitPoints: {},
-            sizeConstants: {}
-            // canX: 0,
-            // canY: 0,
-            // scale: 1,
-            // zoomLvl: 3,
-            // isDragging: false,
-            // downX: 0,
-            // downY: 0,
-            // offX: 0,
-            // offY: 0
+            sizeConstants: {},
+            canX: 0,
+            canY: 0,
+            scale: 1,
+            zoomLvl: 3,
+            isDragging: false,
+            canClick: true,
+            latestCursorX: 0,
+            latestCursorY: 0,
         };
 
-        this.buildNodes = this.handlePreCalcs.bind(this);
+        this.handleCanvasMouseDown = this.handleCanvasMouseDown.bind(this);
+        this.handleDrag = this.handleDrag.bind(this);
+        this.handleCanvasMouseUp = this.handleCanvasMouseUp.bind(this);
+        this.handleZoom = this.handleZoom.bind(this);
+        this.checkHit = this.checkHit.bind(this);
         this.handleNodeClick = this.handleNodeClick.bind(this);
     }
 
@@ -296,6 +299,123 @@ class SkillTree extends Component {
         });
     }
 
+    handleCanvasMouseDown(event) {
+        let eventX = event.nativeEvent.offsetX;
+        let eventY = event.nativeEvent.offsetY;
+
+        this.setState(() => {
+            return {
+                isDragging: true,
+                canClick: true,
+                latestCursorX: eventX,
+                latestCursorY: eventY
+            }
+        });
+    }
+
+    handleDrag(event) {
+        const { latestCursorX, latestCursorY, canClick } = this.state;
+
+        if (canClick === false || Math.abs(event.nativeEvent.offsetX - latestCursorX) >= 10 || Math.abs(event.nativeEvent.offsetY - latestCursorY) >= 10) {
+            let eventX = event.nativeEvent.offsetX;
+            let eventY = event.nativeEvent.offsetY;
+
+            this.setState((state) => {
+                return {
+                    canClick: false,
+                    canX: state.canX + (eventX - state.latestCursorX) / state.scale,
+                    canY: state.canY + (eventY - state.latestCursorY) / state.scale,
+                    latestCursorX: eventX,
+                    latestCursorY: eventY
+                };
+            });
+        }
+    }
+
+    handleCanvasMouseUp(event) {
+        const { latestCursorX, latestCursorY } = this.state;
+
+        let eventX = event.nativeEvent.offsetX;
+        let eventY = event.nativeEvent.offsetY;
+
+        this.setState((state) => {
+            return {
+                isDragging: false,
+                canX: !state.canClick ? state.canX + (eventX - latestCursorX) / state.scale : state.canX,
+                canY: !state.canClick ? state.canY + (eventY - latestCursorY) / state.scale : state.canY
+            };
+        });
+    }
+
+    handleZoom(event) {
+        const { scale } = this.state;
+
+        const dY = Math.floor(event.deltaY) / 1000;
+
+        let newScale = Math.max(Math.min(scale - dY, 1), 0.1)
+
+        let newZoom;
+        if (newScale <= imageZoomLevels[0]) {
+            newZoom = 0;
+        }
+        else if (newScale <= imageZoomLevels[1]) {
+            newZoom = 1;
+        }
+        else if (newScale <= imageZoomLevels[2]) {
+            newZoom = 2;
+        }
+        else {
+            newZoom = 3;
+        }
+
+        this.setState(() => {
+            return {
+                scale: newScale,
+                zoomLvl: newZoom
+            }
+        });
+    }
+
+    checkHit(event, cb) {
+        const { canX, canY, scale, zoomLvl } = this.state;
+        const { hitPoints, nodes } = this.state;
+        const { widest, tallest, normal, notable, keystone } = this.state.sizeConstants;
+
+        let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale - canX);
+        let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale - canY);
+
+        for (let x = -(Math.floor(widest / 2)); x < Math.ceil(widest / 2); x++) { //Widest is 100, so 100/2 is 50 units at most
+            if (hitPoints[offX + x]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
+                for (let y = -(Math.floor(tallest / 2)); y < Math.ceil(tallest / 2); y++) { //Tallest is 100
+                    if (hitPoints[offX + x][offY + y] && nodes[hitPoints[offX + x][offY + y]]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
+                        switch (nodes[hitPoints[offX + x][offY + y]].nodeType) {
+                            case 'normal':
+                                if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2)) {
+                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
+                                    return true;//handleNodeClick(hitPoints[offX + x][offY + y]);//console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                }
+                                return false;
+                            case 'notable':
+                                if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2)) {
+                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
+                                    return true; //console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                }
+                                return false;
+                            case 'keystone':
+                                if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2)) {
+                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
+                                    return true; //console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                }
+                                return false;
+                            default: throw new Error(`Bad hit point value in checkHit`);
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     handleNodeClick(nodeId) {
         const { nodes } = this.state;
 
@@ -308,12 +428,15 @@ class SkillTree extends Component {
 
     render() {
         const { groups, nodes, hitPoints, sizeConstants } = this.state;
+        const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
 
         return (
             <>
                 <div id='tree-container'>
                     <ImageSource />
-                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} handleNodeClick={this.handleNodeClick} />
+                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants}
+                        canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
+                        handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick} />
                 </div>
             </>
         )
@@ -337,7 +460,7 @@ export default SkillTree;
             - add object describing stats for eventual skill calculator stuff
             - *DONE* calculate position for out-group paths
 
-    Find the rest of the assets:
+    Find the rest of the assets: *FOUND* Haven't implemented them yet, but there are web.poecdn paths in the json
         - Circles
         - Class images
         - Ascendency images
@@ -345,7 +468,7 @@ export default SkillTree;
         - skill circles / notable borders / keystone borders
         - maybe the little path end fancies
 
-    Add hit detection:
+    Add hit detection: *DONE*
         - look into ctx.addHitRegion(), may need to calculate the paths and attach them to nodes ahead of time.
 
     Add Middle tree functionality:

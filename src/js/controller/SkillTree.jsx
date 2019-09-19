@@ -23,12 +23,13 @@ class SkillTree extends Component {
             sizeConstants: {},
             canX: 0,
             canY: 0,
-            scale: 1,
-            zoomLvl: 3,
+            scale: 0.1,
+            zoomLvl: 0,
             isDragging: false,
-            canClick: true,
+            canClick: false,
             latestCursorX: 0,
             latestCursorY: 0,
+            loaded: false
         };
 
         this.handleCanvasMouseDown = this.handleCanvasMouseDown.bind(this);
@@ -37,6 +38,7 @@ class SkillTree extends Component {
         this.handleZoom = this.handleZoom.bind(this);
         this.checkHit = this.checkHit.bind(this);
         this.handleNodeClick = this.handleNodeClick.bind(this);
+        this.finishedLoadingAssets = this.finishedLoadingAssets.bind(this);
     }
 
     componentDidMount() {
@@ -332,8 +334,8 @@ class SkillTree extends Component {
             this.setState((state) => {
                 return {
                     canClick: false,
-                    canX: state.canX + (eventX - state.latestCursorX) / state.scale,
-                    canY: state.canY + (eventY - state.latestCursorY) / state.scale,
+                    canX: state.canX + (eventX - state.latestCursorX) * 2 / state.scale,
+                    canY: state.canY + (eventY - state.latestCursorY) * 2 / state.scale,
                     latestCursorX: eventX,
                     latestCursorY: eventY
                 };
@@ -350,8 +352,8 @@ class SkillTree extends Component {
         this.setState((state) => {
             return {
                 isDragging: false,
-                canX: !state.canClick ? state.canX + (eventX - latestCursorX) / state.scale : state.canX,
-                canY: !state.canClick ? state.canY + (eventY - latestCursorY) / state.scale : state.canY
+                canX: !state.canClick ? state.canX + (eventX - latestCursorX) * 2 / state.scale : state.canX,
+                canY: !state.canClick ? state.canY + (eventY - latestCursorY) * 2 / state.scale : state.canY
             };
         });
     }
@@ -390,8 +392,8 @@ class SkillTree extends Component {
         const { hitPoints, nodes } = this.state;
         const { widest, tallest, normal, notable, keystone } = this.state.sizeConstants;
 
-        let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale - canX);
-        let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale - canY);
+        let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale);
+        let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale);
 
         for (let x = -(Math.floor(widest / 2)); x < Math.ceil(widest / 2); x++) { //Widest is 100, so 100/2 is 50 units at most
             if (hitPoints[offX + x]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
@@ -435,15 +437,23 @@ class SkillTree extends Component {
         }
     }
 
+    finishedLoadingAssets() {
+        if (this.state.loaded) throw new Error(`Got loading done alert twice >:(`);
+
+        this.setState(() => {
+            return { loaded: true };
+        });
+    }
+
     render() {
-        const { groups, nodes, hitPoints, sizeConstants } = this.state;
+        const { groups, nodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
 
         return (
             <>
                 <div id='tree-container'>
-                    <ImageSource />
-                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants}
+                    <ImageSource finishedLoadingAssets={this.finishedLoadingAssets} />
+                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                         canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
                         handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick} />
                 </div>

@@ -15,7 +15,39 @@ class TreeBase extends Component {
         this.updateCanvas();
     }
 
+
     updateCanvas() {
+        const canvas = this.canvasRef.current;
+        const ctx = canvas.getContext('2d');
+
+        if (!this.props.loaded) {
+            ctx.save();
+            ctx.fillStyle = '#f7c8d8';
+            ctx.fillRect(min_x - 1000, min_y - 1000, max_x + Math.abs(min_x) + 2000, max_y + Math.abs(min_y) + 2000);
+
+            const loadingMessage = `Loading Assets, Please Wait :)`;
+
+            ctx.font = '50px serif';
+            ctx.textBaseLine = 'middle';
+            ctx.fillStyle = '#55c8d8';
+
+            let textLength = ctx.measureText(loadingMessage);
+
+            ctx.fillText(loadingMessage, 916 / 2 - (textLength.width / 2), 767 / 2);
+            ctx.restore();
+            return 0;
+        }
+
+        const { canX, canY, scale } = this.props;
+
+        ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale, 767 / 2 + canY * scale);
+        ctx.clearRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), 916 / scale, 767 / scale);
+
+        this.drawTreeStructure();
+        this.drawBackGround();
+    }
+
+    drawTreeStructure() {
         const { groups, nodes } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
@@ -23,52 +55,6 @@ class TreeBase extends Component {
         if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
             const canvas = this.canvasRef.current;
             const ctx = canvas.getContext('2d');
-
-            ctx.clearRect(min_x - 1000, min_y - 1000, max_x - min_x + 2000, max_y - min_y + 2000);
-            ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale * 2, 767 / 2 + canY * scale * 2);
-
-            Object.values(groups).map((group, groupIndex) => {
-                if (group.circleType) {
-                    const { x, y } = group;
-                    let circleId, circleSrc;
-                    let circleWidth, circleHeight;
-
-                    switch (group.circleType) {
-                        case 'small':
-                            circleId = `PSGroupBackground1-${zoomLvl}`
-                            circleSrc = document.getElementById(`${circleId}`)
-
-                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
-                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
-
-                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
-                            break;
-                        case 'medium':
-                            circleId = `PSGroupBackground2-${zoomLvl}`
-                            circleSrc = document.getElementById(`${circleId}`)
-
-                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
-                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
-
-                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
-                            break;
-                        case 'large':
-                            circleId = `PSGroupBackground3-${zoomLvl}`
-                            circleSrc = document.getElementById(`${circleId}`)
-
-                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
-                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
-
-                            ctx.save(); //Minus full image height since it's a half circle
-                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight, circleWidth, circleHeight);
-                            ctx.translate(x, y);
-                            ctx.rotate(Math.PI);
-                            ctx.drawImage(circleSrc, 0 - (circleWidth / 2), 0 - circleHeight, circleWidth, circleHeight);
-                            ctx.restore();
-                            break;
-                    }
-                }
-            });
 
             Object.values(groups).map((group, groupIndex) => {
                 group.n.map((nodeId, nodeIndex) => {
@@ -170,6 +156,68 @@ class TreeBase extends Component {
                     }
                 })
             });
+        }
+    }
+
+    drawBackGround() {
+        const { groups, nodes } = this.props;
+        const { canX, canY } = this.props;
+        const { scale, zoomLvl } = this.props;
+
+        if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
+            const canvas = this.canvasRef.current;
+            const ctx = canvas.getContext('2d');
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-over';
+
+            Object.values(groups).map((group, groupIndex) => {
+                if (group.circleType) {
+                    const { x, y } = group;
+                    let circleId, circleSrc;
+                    let circleWidth, circleHeight;
+
+                    switch (group.circleType) {
+                        case 'small':
+                            circleId = `PSGroupBackground1-${zoomLvl}`
+                            circleSrc = document.getElementById(`${circleId}`)
+
+                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
+                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
+                            break;
+                        case 'medium':
+                            circleId = `PSGroupBackground2-${zoomLvl}`
+                            circleSrc = document.getElementById(`${circleId}`)
+
+                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
+                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
+                            break;
+                        case 'large':
+                            circleId = `PSGroupBackground3-${zoomLvl}`
+                            circleSrc = document.getElementById(`${circleId}`)
+
+                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
+                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+
+                            ctx.save(); //Minus full image height since it's a half circle
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight, circleWidth, circleHeight);
+                            ctx.translate(x, y);
+                            ctx.rotate(Math.PI);
+                            ctx.drawImage(circleSrc, 0 - (circleWidth / 2), 0 - circleHeight, circleWidth, circleHeight);
+                            ctx.restore();
+                            break;
+                    }
+                }
+            });
+
+            ctx.fillStyle = ctx.createPattern(document.getElementById(`Background1-${zoomLvl}`), 'repeat');
+            ctx.fillRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), 916 / scale, 767 / scale);
+
+            ctx.restore();
         }
     }
 

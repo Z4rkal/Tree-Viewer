@@ -28,6 +28,49 @@ class TreeBase extends Component {
             ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale * 2, 767 / 2 + canY * scale * 2);
 
             Object.values(groups).map((group, groupIndex) => {
+                if (group.circleType) {
+                    const { x, y } = group;
+                    let circleId, circleSrc;
+                    let circleWidth, circleHeight;
+
+                    switch (group.circleType) {
+                        case 'small':
+                            circleId = `PSGroupBackground1-${zoomLvl}`
+                            circleSrc = document.getElementById(`${circleId}`)
+
+                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
+                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
+                            break;
+                        case 'medium':
+                            circleId = `PSGroupBackground2-${zoomLvl}`
+                            circleSrc = document.getElementById(`${circleId}`)
+
+                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
+                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
+                            break;
+                        case 'large':
+                            circleId = `PSGroupBackground3-${zoomLvl}`
+                            circleSrc = document.getElementById(`${circleId}`)
+
+                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
+                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+
+                            ctx.save(); //Minus full image height since it's a half circle
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight, circleWidth, circleHeight);
+                            ctx.translate(x, y);
+                            ctx.rotate(Math.PI);
+                            ctx.drawImage(circleSrc, 0 - (circleWidth / 2), 0 - circleHeight, circleWidth, circleHeight);
+                            ctx.restore();
+                            break;
+                    }
+                }
+            });
+
+            Object.values(groups).map((group, groupIndex) => {
                 group.n.map((nodeId, nodeIndex) => {
                     if (nodes[nodeId]) {
                         const node = nodes[nodeId];
@@ -44,14 +87,53 @@ class TreeBase extends Component {
 
                         const src = document.getElementById(`${srcId}`);
 
-                        ctx.save();
-                        ctx.fillStyle = '#f7c8d8';
-
                         let destWidth = coords.w / imageZoomLevels[zoomLvl];
                         let destHeight = coords.h / imageZoomLevels[zoomLvl];
 
-                        ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, nX - (destWidth / 2), nY - (destHeight / 2), destWidth, destHeight);
-                        ctx.restore();
+                        if (node.spc.length === 0) {
+                            ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, nX - (destWidth / 2), nY - (destHeight / 2), destWidth, destHeight);
+
+                            if (!node.ascendancyName) {
+                                let frameId, frameSrc;
+                                let frameWidth, frameHeight;
+                                if (nodeType === 'normal' && !node.isJewelSocket) {
+                                    frameId = `PSSkillFrame${active ? `Active` : ``}-${zoomLvl}`
+                                    frameSrc = document.getElementById(`${frameId}`)
+
+                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
+                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+
+                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                }
+                                else if (nodeType === 'notable') {
+                                    frameId = `NotableFrame${active ? `Allocated` : `Unallocated`}-${zoomLvl}`
+                                    frameSrc = document.getElementById(`${frameId}`)
+
+                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
+                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+
+                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                }
+                                else if (nodeType === 'keystone') {
+                                    frameId = `KeystoneFrame${active ? `Allocated` : `Unallocated`}-${zoomLvl}`
+                                    frameSrc = document.getElementById(`${frameId}`)
+
+                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
+                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+
+                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                }
+                                else if (node.isJewelSocket) {
+                                    frameId = `JewelFrame${active ? `Allocated` : `Unallocated`}-${zoomLvl}`
+                                    frameSrc = document.getElementById(`${frameId}`)
+
+                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
+                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+
+                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                }
+                            }
+                        }
 
                         arcs.map((arc) => {
                             ctx.save();
@@ -99,7 +181,7 @@ class TreeBase extends Component {
         return (
             <>
                 <div id='zoom-debug'>{Math.floor(scale * 1000) / 1000}</div>
-                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) handleZoom(e); }} onMouseDown={(e) => handleCanvasMouseDown(e)} onMouseMove={(e) => { if (isDragging) { handleDrag(e); } else { checkHit(e, () => console.log('Hit!')) }; }} onMouseUp={(e) => { if (isDragging) { handleCanvasMouseUp(e); }; }} onMouseLeave={(e) => { if (isDragging) { handleCanvasMouseUp(e); }; }} onClick={(e) => { if (canClick) { checkHit(e, handleNodeClick); }; }}>
+                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) handleZoom(e); }} onMouseDown={(e) => handleCanvasMouseDown(e)} onMouseMove={(e) => { if (isDragging) { handleDrag(e); }; }} onMouseUp={(e) => { if (isDragging) { handleCanvasMouseUp(e); }; }} onMouseLeave={(e) => { if (isDragging) { handleCanvasMouseUp(e); }; }} onClick={(e) => { if (canClick) { checkHit(e, handleNodeClick); }; }}>
                     Sorry, your browser can't read canvas elements, normally the skill tree would render here :(
                 </canvas>
             </>

@@ -1,6 +1,7 @@
 import React, { Component } from 'React';
 
 import getOrbitAngle from '../lib/getOrbitAngle';
+import findLargestOrbit from '../lib/findLargestOrbit';
 
 import ImageSource from '../components/ImageSource';
 import TreeBase from '../canvases/TreeBase';
@@ -8,8 +9,8 @@ import TreeBase from '../canvases/TreeBase';
 import opts from '../../data/Tree';
 const { groups, nodes, constants } = opts.passiveSkillTreeData;
 const { skillsPerOrbit, orbitRadii } = constants;
-const { imageRoot, skillSprites, imageZoomLevels } = opts.passiveSkillTreeData;
-const { min_x, max_x, min_y, max_y } = opts.passiveSkillTreeData;
+const { skillSprites, imageZoomLevels } = opts.passiveSkillTreeData;
+
 
 class SkillTree extends Component {
     constructor() {
@@ -52,7 +53,6 @@ class SkillTree extends Component {
         let keystone = false;
         Object.entries(groups).map(([groupKey, group]/*,groupIndex*/) => {
             ourGroups[groupKey] = groups[groupKey]; //Should do a deep clone probably
-
             group.n.map((nodeId/*,nodeIndex*/) => {
                 if (nodes[nodeId]) {
 
@@ -268,7 +268,16 @@ class SkillTree extends Component {
                     ourNodes[nodeId].arcs = arcs;
                     ourNodes[nodeId].paths = paths;
                 }
-            })
+
+                if (!ourGroups[groupKey].isAscendancy && ourNodes[nodeId].ascendancyName)
+                    ourGroups[groupKey].isAscendancy = true;
+
+                if (!ourGroups[groupKey].hasStartingNode && ourNodes[nodeId].spc.length !== 0)
+                    ourGroups[groupKey].hasStartingNode = true;
+            });
+
+            if (!ourGroups[groupKey].isAscendancy && !ourGroups[groupKey].hasStartingNode)
+                ourGroups[groupKey].circleType = findLargestOrbit(group.oo);
         });
 
         let widest = 0;
@@ -416,10 +425,10 @@ class SkillTree extends Component {
         return false;
     }
 
-    handleNodeClick(nodeId) {
+    handleNodeClick(nodeId) { //TODO: Check that node can be taken --> LATER: Take all nodes on shortest path to node if possible
         const { nodes } = this.state;
 
-        if (nodes[nodeId]) {
+        if (nodes[nodeId] && nodes[nodeId].spc.length === 0) {
             this.setState((state) => {
                 return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } } }
             });
@@ -460,12 +469,12 @@ export default SkillTree;
             - add object describing stats for eventual skill calculator stuff
             - *DONE* calculate position for out-group paths
 
-    Find the rest of the assets: *FOUND* Haven't implemented them yet, but there are web.poecdn paths in the json
-        - Circles
+    Find the rest of the assets:
+        - *DONE* Circles
         - Class images
         - Ascendency images
         - Path/arc images
-        - skill circles / notable borders / keystone borders
+        - *DONE* skill circles / notable borders / keystone borders
         - maybe the little path end fancies
 
     Add hit detection: *DONE*

@@ -52,7 +52,7 @@ class ImageSource extends Component {
         for (let i = 0; i < num; i++) {
             this.addToLoads();
             imgs[i] = <img key={`Sprite Sheet ${root}${i}`} id={`${root}${i}`}
-                src={`${imageRoot}/${root}${i}${ext}`} onLoad={() => this.doneLoading()} />
+                src={`${imageRoot}/${root}${i}${ext}`} onLoad={() => this.doneLoading()} onError={() => { alert(`${root}${i}${ext} failed to load`); this.doneLoading(); }} />
         }
 
         this.setState((state) => {
@@ -68,7 +68,7 @@ class ImageSource extends Component {
             Object.values(assetValues).map((value, valueIndex) => {
                 this.addToLoads();
                 imgs[imgIndex] = (<img key={`Asset: ${assetName} ${assetIndex}, Value: ${valueIndex}`}
-                    id={`${assetName}-${valueIndex}`} src={`${ASSET_ROOT}${value}`} onLoad={() => this.doneLoading()} />);
+                    id={`${assetName}-${valueIndex}`} src={`${ASSET_ROOT}${value}`} onLoad={() => this.doneLoading()} onError={() => { alert(`${assetName}-${valueIndex} failed to load`); this.doneLoading(); }} />);
                 imgIndex++;
             });
         });

@@ -21,6 +21,7 @@ class SkillTree extends Component {
             groups: {},
             nodes: {},
             startingNodes: {},
+            ascStartingNodes: {},
             hitPoints: {},
             sizeConstants: {},
             canX: 0,
@@ -41,6 +42,8 @@ class SkillTree extends Component {
         this.checkHit = this.checkHit.bind(this);
         this.handleNodeClick = this.handleNodeClick.bind(this);
         this.finishedLoadingAssets = this.finishedLoadingAssets.bind(this);
+        this.resetTree = this.resetTree.bind(this);
+        this.setCharacter = this.setCharacter.bind(this);
     }
 
     componentDidMount() {
@@ -50,9 +53,11 @@ class SkillTree extends Component {
     handlePreCalcs() {
         let ourGroups = {};
         let ourNodes = {};
-        let startingNodes = {}
+        let startingNodes = {};
+        let ascStartingNodes = {};
         let hitPoints = {};
 
+        let initialActiveClass;
         let normal = false;
         let notable = false;
         let keystone = false;
@@ -179,6 +184,10 @@ class SkillTree extends Component {
                     ourNodes[nodeId].ø = ø;
                     ourNodes[nodeId].fullString = fullString;
                     ourNodes[nodeId].active = !m ? false : null;
+                    ourNodes[nodeId].canTake = 0;
+
+                    if (!ourNodes[nodeId].adjacent)
+                        ourNodes[nodeId].adjacent = [];
 
                     let arcs = [];
                     let paths = [];
@@ -194,9 +203,6 @@ class SkillTree extends Component {
 
                         if (ourNodes[outId].adjacent.find((value) => value === nodeId) === undefined)
                             ourNodes[outId].adjacent.push(nodeId);
-
-                        if (!ourNodes[nodeId].adjacent)
-                            ourNodes[nodeId].adjacent = [];
 
                         if (ourNodes[nodeId].adjacent.find((value) => value === outId) === undefined)
                             ourNodes[nodeId].adjacent.push(outId);
@@ -284,7 +290,7 @@ class SkillTree extends Component {
 
                         let nodeClass = Object.entries(classes).find(([classDesignation, classNumber]) => classNumber === ourNodes[nodeId].spc[0]);
 
-                        if (nodeClass[1] === opts.startClass) ourNodes[nodeId].active = true;
+                        if (nodeClass[1] === opts.startClass) initialActiveClass = nodeId;
 
                         switch (nodeClass[0].replace(/Class$/, ``)) {
                             case 'Str':
@@ -346,10 +352,17 @@ class SkillTree extends Component {
                             default: throw new Error(`Something went wrong with determining the class type: nodeClass: ${nodeClass}`);
                         }
                     }
+
+                    if (ourNodes[nodeId].isAscendancyStart) {
+                        ascStartingNodes[nodeId] = {
+                            nodeId: nodeId,
+                            ascName: ourNodes[nodeId].ascendancyName
+                        }
+                    }
                 }
             });
 
-            if (!ourGroups[groupKey].isAscendancy)// && !ourGroups[groupKey].hasStartingNode)
+            if (!ourGroups[groupKey].isAscendancy)
                 ourGroups[groupKey].circleType = findLargestOrbit(group.oo);
         });
 
@@ -370,6 +383,7 @@ class SkillTree extends Component {
                 groups: ourGroups,
                 nodes: ourNodes,
                 startingNodes: startingNodes,
+                ascStartingNodes: ascStartingNodes,
                 hitPoints: hitPoints,
                 sizeConstants: {
                     widest: widest,
@@ -379,6 +393,26 @@ class SkillTree extends Component {
                     keystone: keystone
                 }
             }
+        }, () => {
+            if (initialActiveClass === undefined) {
+                console.log('Undefined Initial Active Class');
+                try {
+                    initialActiveClass = Object.values(ourNodes).find((node) => node.spc.length !== 0 && node.spc[0] === 0).id;
+                }
+                catch (error) {
+                    throw new Error(`Something is pretty wrong, couldn't find an initial starting node to activate`);
+                }
+            }
+
+            this.setCharacter(initialActiveClass);
+        });
+    }
+
+    finishedLoadingAssets() {
+        if (this.state.loaded) throw new Error(`Got loading done alert twice >:(`);
+
+        this.setState(() => {
+            return { loaded: true };
         });
     }
 
@@ -471,7 +505,6 @@ class SkillTree extends Component {
             if (hitPoints[offX + x]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
                 for (let y = -(Math.floor(tallest / 2)); y < Math.ceil(tallest / 2); y++) { //Tallest is 100
                     if (hitPoints[offX + x][offY + y] && nodes[hitPoints[offX + x][offY + y]]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
-                        console.log(nodes[hitPoints[offX + x][offY + y]].adjacent);
                         switch (nodes[hitPoints[offX + x][offY + y]].nodeType) {
                             case 'normal':
                                 if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2)) {
@@ -502,31 +535,102 @@ class SkillTree extends Component {
 
     handleNodeClick(nodeId) { //TODO: Check that node can be taken --> LATER: Take all nodes on shortest path to node if possible
         const { nodes } = this.state;
+        const node = nodes[nodeId];
 
-        if (nodes[nodeId] && nodes[nodeId].spc.length === 0) {
-            this.setState((state) => {
-                return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } } }
-            });
+        if (node && node.spc.length === 0 && !node.isAscendancyStart) {
+            if (node.canTake === 1 || node.isBlighted) {
+                const adjacentChange = !node.active ? 1 : -1;
+
+                this.setState((state) => {
+                    return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } } }
+                });
+
+                for (let i = 0; i < node.adjacent.length; i++) {
+                    this.setState((state) => {
+                        const outNode = state.nodes[node.adjacent[i]];
+
+                        if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
+                        if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(`);
+
+                        return { nodes: { ...state.nodes, [outNode.id]: { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange } } }
+                    });
+                }
+            }
+            else if (node.canTake > 1) {
+                //TODO: determine whether removing a node with more than one adjacent active node will break the tree
+                //If it will, then remove the hanging nodes
+                const adjacentChange = !node.active ? 1 : -1;
+
+                this.setState((state) => {
+                    return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } } }
+                });
+
+                for (let i = 0; i < node.adjacent.length; i++) {
+                    this.setState((state) => {
+                        const outNode = state.nodes[node.adjacent[i]];
+
+                        if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
+                        if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(`);
+
+                        return { nodes: { ...state.nodes, [outNode.id]: { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange } } }
+                    });
+                }
+            }
+            else {
+                //Node canTake is 0, TODO: write algorithm for taking shortest path to node
+            }
         }
     }
 
-    finishedLoadingAssets() {
-        if (this.state.loaded) throw new Error(`Got loading done alert twice >:(`);
+    resetTree() {
+        const { nodes } = this.state;
 
-        this.setState(() => {
-            return { loaded: true };
+        Object.values(nodes).map((node) => {
+            this.setState((state) => {
+                return { nodes: { ...state.nodes, [node.id]: { ...state.nodes[node.id], active: !state.nodes[node.id].m ? false : null, canTake: 0 } } }
+            });
         });
     }
 
+    setCharacter(nodeId) {
+        const { nodes } = this.state;
+
+        console.log(nodes[nodeId]);
+        if (nodes[nodeId] && nodes[nodeId].spc.length !== 0) {
+            if (nodes[nodeId].active === false) {
+                this.resetTree();
+
+                const node = nodes[nodeId];
+                const adjacentChange = 1;
+
+                this.setState((state) => {
+                    return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: true } } }
+                });
+
+                for (let i = 0; i < node.adjacent.length; i++) {
+                    this.setState((state) => {
+                        const outNode = state.nodes[node.adjacent[i]];
+
+                        if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
+                        if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(`);
+
+                        return { nodes: { ...state.nodes, [outNode.id]: { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange } } }
+                    });
+                }
+            }
+        }
+        else throw new Error(`Tried to set character using invalid node: ${nodeId}`);
+    }
+
     render() {
-        const { groups, nodes, startingNodes, hitPoints, sizeConstants, loaded } = this.state;
+        const { groups, nodes, startingNodes, ascStartingNodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
 
         return (
             <>
                 <div id='tree-container'>
                     <ImageSource finishedLoadingAssets={this.finishedLoadingAssets} />
-                    <TreeBase groups={groups} nodes={nodes} startingNodes={startingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
+                    <TreeBase groups={groups} nodes={nodes} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                         canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
                         handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick} />
                 </div>
@@ -554,11 +658,12 @@ export default SkillTree;
 
     Find the rest of the assets:
         - *DONE* Circles
-        - Class images
-        - Ascendency images
-        - Path/arc images
+        - *DONE* Class images
+        - *DONE* Ascendency images
+        - *DONE* Path images
+        - Arc images
         - *DONE* skill circles / notable borders / keystone borders
-        - maybe the little path end fancies
+        - *DONE* maybe the little path end fancies
 
     Add hit detection: *DONE*
         - look into ctx.addHitRegion(), may need to calculate the paths and attach them to nodes ahead of time.

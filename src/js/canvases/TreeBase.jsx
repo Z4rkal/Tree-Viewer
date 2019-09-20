@@ -62,7 +62,7 @@ class TreeBase extends Component {
                     if (nodes[nodeId]) {
                         const node = nodes[nodeId];
                         const { icon, srcRoot, nX, nY } = node;
-                        const { nodeType, active } = node;
+                        const { nodeType, active, canTake } = node;
                         const { arcs, paths } = node;
                         //const coords  = node.coords[`z${zoomLvl}`];
 
@@ -78,13 +78,14 @@ class TreeBase extends Component {
                         let destHeight = coords.h / imageZoomLevels[zoomLvl];
 
                         if (node.spc.length === 0) {
-                            ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, nX - (destWidth / 2), nY - (destHeight / 2), destWidth, destHeight);
+                            if (!node.isAscendancyStart)
+                                ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, nX - (destWidth / 2), nY - (destHeight / 2), destWidth, destHeight);
 
                             if (!node.ascendancyName) {
                                 let frameId, frameSrc;
                                 let frameWidth, frameHeight;
                                 if (nodeType === 'normal' && !node.isJewelSocket) {
-                                    frameId = `PSSkillFrame${active ? `Active` : ``}-${zoomLvl}`
+                                    frameId = `PSSkillFrame${active ? `Active` : canTake ? `Highlighted` : ``}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
                                     frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
@@ -93,7 +94,7 @@ class TreeBase extends Component {
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
                                 }
                                 else if (nodeType === 'notable') {
-                                    frameId = `NotableFrame${active ? `Allocated` : `Unallocated`}-${zoomLvl}`
+                                    frameId = `${node.isBlighted ? `Blighted` : ``}NotableFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
                                     frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
@@ -102,7 +103,7 @@ class TreeBase extends Component {
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
                                 }
                                 else if (nodeType === 'keystone') {
-                                    frameId = `KeystoneFrame${active ? `Allocated` : `Unallocated`}-${zoomLvl}`
+                                    frameId = `KeystoneFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
                                     frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
@@ -111,13 +112,42 @@ class TreeBase extends Component {
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
                                 }
                                 else if (node.isJewelSocket) {
-                                    frameId = `JewelFrame${active ? `Allocated` : `Unallocated`}-${zoomLvl}`
+                                    frameId = `JewelFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
                                     frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
                                     frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
 
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                }
+                            }
+                            else {
+                                if (node.isAscendancyStart) {
+                                    const ascStartId = `PassiveSkillScreenAscendancyMiddle-${zoomLvl}`;
+                                    const ascStartSrc = document.getElementById(`${ascStartId}`);
+
+                                    const ascStartWidth = ascStartSrc.width / imageZoomLevels[zoomLvl];
+                                    const ascStartHeight = ascStartSrc.height / imageZoomLevels[zoomLvl];
+
+                                    ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
+                                }
+                                else if (nodeType === 'normal') {
+                                    const ascSmallId = `PassiveSkillScreenAscendancyFrameSmall${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
+                                    const ascSmallSrc = document.getElementById(`${ascSmallId}`);
+
+                                    const ascSmallWidth = ascSmallSrc.width / imageZoomLevels[zoomLvl];
+                                    const ascSmallHeight = ascSmallSrc.height / imageZoomLevels[zoomLvl];
+
+                                    ctx.drawImage(ascSmallSrc, nX - (ascSmallWidth / 2), nY - (ascSmallHeight / 2), ascSmallWidth, ascSmallHeight);
+                                }
+                                else if (nodeType === 'notable') {
+                                    const ascStartId = `PassiveSkillScreenAscendancyFrameLarge${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
+                                    const ascStartSrc = document.getElementById(`${ascStartId}`);
+
+                                    const ascStartWidth = ascStartSrc.width / imageZoomLevels[zoomLvl];
+                                    const ascStartHeight = ascStartSrc.height / imageZoomLevels[zoomLvl];
+
+                                    ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
                                 }
                             }
                         }
@@ -163,9 +193,9 @@ class TreeBase extends Component {
                             ctx.translate(x1, y1);
                             ctx.rotate(ø);
                             ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                            ctx.scale(-1,1);
+                            ctx.scale(-1, 1);
                             ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                            ctx.scale(-1,1);
+                            ctx.scale(-1, 1);
                             ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), w, lineHeight)
                             ctx.restore();
                         });
@@ -176,7 +206,7 @@ class TreeBase extends Component {
     }
 
     drawBackGround() {
-        const { groups, nodes, startingNodes } = this.props;
+        const { groups, nodes, startingNodes, ascStartingNodes } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
 
@@ -197,6 +227,21 @@ class TreeBase extends Component {
                 const { nX, nY } = nodes[node.nodeId];
 
                 ctx.drawImage(plaqueSrc, nX - (plaqueWidth / 2), nY - (plaqueHeight / 2), plaqueWidth, plaqueHeight);
+
+            });
+        }
+
+        if (Object.values(ascStartingNodes).length !== 0) {
+            Object.values(ascStartingNodes).map((node) => {
+                const ascBackgroundId = `Classes${node.ascName}-${zoomLvl}`;
+                const ascBackgroundSrc = document.getElementById(`${ascBackgroundId}`);
+
+                const ascBackgroundWidth = ascBackgroundSrc.width / imageZoomLevels[zoomLvl];
+                const ascBackgroundHeight = ascBackgroundSrc.height / imageZoomLevels[zoomLvl];
+
+                const { nX, nY } = nodes[node.nodeId];
+
+                ctx.drawImage(ascBackgroundSrc, nX - (ascBackgroundWidth / 2), nY - (ascBackgroundHeight / 2), ascBackgroundWidth, ascBackgroundHeight);
 
             });
         }

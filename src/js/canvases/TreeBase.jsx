@@ -40,9 +40,10 @@ class TreeBase extends Component {
 
         const { canX, canY, scale } = this.props;
 
+        //Redraw whole tree, later I'd like to only redraw the specific things that change if the state change
+        //is something like a node being taken or the search bar updating
         ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale, 767 / 2 + canY * scale);
         ctx.clearRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), 916 / scale, 767 / scale);
-
         this.drawTreeStructure();
         this.drawBackGround();
     }
@@ -144,33 +145,63 @@ class TreeBase extends Component {
                             ctx.fillStyle = "rgba(200,0,0,.5)";
                             ctx.strokeStyle = "rgba(150,150,0,.8)";
 
-                            const { x1, y1, x2, y2 } = path;
+                            const { x1, y1, w, ø, startId, outId } = path;
 
-                            ctx.beginPath();
-                            ctx.moveTo(x1, y1);
-                            ctx.lineTo(x2, y2);
-                            ctx.stroke();
+                            const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
+                            const lineSrc = document.getElementById(`${lineId}`);
 
+                            if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
+
+                            const lineHeight = lineSrc.height / imageZoomLevels[zoomLvl];
+
+                            const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
+                            const decoSrc = document.getElementById(`${decoId}`);
+
+                            const decoWidth = decoSrc.width / imageZoomLevels[zoomLvl];
+                            const decoHeight = decoSrc.height / imageZoomLevels[zoomLvl];
+
+                            ctx.translate(x1, y1);
+                            ctx.rotate(ø);
+                            ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                            ctx.scale(-1,1);
+                            ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                            ctx.scale(-1,1);
+                            ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), w, lineHeight)
                             ctx.restore();
-                        })
+                        });
                     }
-                })
+                });
             });
         }
     }
 
     drawBackGround() {
-        const { groups, nodes } = this.props;
+        const { groups, nodes, startingNodes } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
 
-        if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
-            const canvas = this.canvasRef.current;
-            const ctx = canvas.getContext('2d');
+        const canvas = this.canvasRef.current;
+        const ctx = canvas.getContext('2d');
 
-            ctx.save();
-            ctx.globalCompositeOperation = 'destination-over';
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-over';
 
+        if (Object.values(startingNodes).length !== 0) {
+            Object.values(startingNodes).map((node) => {
+                const plaqueId = nodes[node.nodeId].active ? `${node.activeImageRoot}-${zoomLvl}` : `PSStartNodeBackgroundInactive-${zoomLvl}`;
+                const plaqueSrc = document.getElementById(`${plaqueId}`);
+
+                const plaqueWidth = plaqueSrc.width / imageZoomLevels[zoomLvl];
+                const plaqueHeight = plaqueSrc.height / imageZoomLevels[zoomLvl];
+
+                const { nX, nY } = nodes[node.nodeId];
+
+                ctx.drawImage(plaqueSrc, nX - (plaqueWidth / 2), nY - (plaqueHeight / 2), plaqueWidth, plaqueHeight);
+
+            });
+        }
+
+        if (Object.values(groups).length !== 0) {
             Object.values(groups).map((group, groupIndex) => {
                 if (group.circleType) {
                     const { x, y } = group;
@@ -216,9 +247,9 @@ class TreeBase extends Component {
 
             ctx.fillStyle = ctx.createPattern(document.getElementById(`Background1-${zoomLvl}`), 'repeat');
             ctx.fillRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), 916 / scale, 767 / scale);
-
-            ctx.restore();
         }
+
+        ctx.restore();
     }
 
     render() {

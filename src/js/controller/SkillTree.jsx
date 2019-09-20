@@ -8,8 +8,9 @@ import TreeBase from '../canvases/TreeBase';
 
 import opts from '../../data/Tree';
 const { groups, nodes, constants } = opts.passiveSkillTreeData;
-const { skillsPerOrbit, orbitRadii } = constants;
+const { skillsPerOrbit, orbitRadii, classes } = constants;
 const { skillSprites, imageZoomLevels } = opts.passiveSkillTreeData;
+const { ascClasses } = opts;
 
 
 class SkillTree extends Component {
@@ -19,6 +20,7 @@ class SkillTree extends Component {
         this.state = {
             groups: {},
             nodes: {},
+            startingNodes: {},
             hitPoints: {},
             sizeConstants: {},
             canX: 0,
@@ -48,6 +50,7 @@ class SkillTree extends Component {
     handlePreCalcs() {
         let ourGroups = {};
         let ourNodes = {};
+        let startingNodes = {}
         let hitPoints = {};
 
         let normal = false;
@@ -88,7 +91,8 @@ class SkillTree extends Component {
                     const { ks, not, m } = node;
                     const { out } = node;
 
-                    ourNodes[nodeId] = node;
+                    if (!ourNodes[nodeId])
+                        ourNodes[nodeId] = node;
 
                     const nodeType = m ? 'mastery' : ks ? 'keystone' : not ? 'notable' : 'normal';// + (!m ? 'Active' : '');
                     const srcRoot = (m ? 'groups-' : 'skills-');// + `${zoomLvl}`;
@@ -182,67 +186,61 @@ class SkillTree extends Component {
                     let pathId = 0;
                     out.map((outId) => {
                         const outNode = nodes[outId];
-                        if (outNode.g === node.g) {
-                            if (outNode.o === node.o) {
-                                let øOut = 90 * Math.PI / 180 - getOrbitAngle(outNode.oidx, numOnOrbit);
+                        if (!ourNodes[outId])
+                            ourNodes[outId] = nodes[outId];
 
-                                let clockDist = 0;
-                                let antiDist = 0;
-                                if (outNode.oidx > oidx) {
-                                    clockDist = outNode.oidx - oidx;
-                                    antiDist = numOnOrbit - clockDist;
-                                }
-                                else {
-                                    antiDist = oidx - outNode.oidx;
-                                    clockDist = numOnOrbit - antiDist;
-                                }
+                        if (!ourNodes[outId].adjacent)
+                            ourNodes[outId].adjacent = [];
 
-                                if (clockDist > antiDist) {
-                                    arcs[arcId] = {
-                                        x: group.x,
-                                        y: group.y,
-                                        radius,
-                                        øStart: -ø,
-                                        øEnd: -øOut,
-                                        aClock: true
-                                    };
-                                }
-                                else {
-                                    arcs[arcId] = {
-                                        x: group.x,
-                                        y: group.y,
-                                        radius,
-                                        øStart: -ø,
-                                        øEnd: -øOut,
-                                        aClock: false
-                                    };
-                                }
+                        if (ourNodes[outId].adjacent.find((value) => value === nodeId) === undefined)
+                            ourNodes[outId].adjacent.push(nodeId);
 
-                                arcId++;
+                        if (!ourNodes[nodeId].adjacent)
+                            ourNodes[nodeId].adjacent = [];
+
+                        if (ourNodes[nodeId].adjacent.find((value) => value === outId) === undefined)
+                            ourNodes[nodeId].adjacent.push(outId);
+
+                        if (outNode.g === node.g && outNode.o === node.o) {
+                            let øOut = 90 * Math.PI / 180 - getOrbitAngle(outNode.oidx, numOnOrbit);
+
+                            let clockDist = 0;
+                            let antiDist = 0;
+                            if (outNode.oidx > oidx) {
+                                clockDist = outNode.oidx - oidx;
+                                antiDist = numOnOrbit - clockDist;
                             }
                             else {
-                                const outRadius = orbitRadii[outNode.o];
-                                const outNumOnOrbit = skillsPerOrbit[outNode.o];
-
-                                let ø = 90 * Math.PI / 180 - getOrbitAngle(outNode.oidx, outNumOnOrbit);
-
-                                let outXAdjust = outRadius * Math.cos(-ø);
-                                let outYAdjust = outRadius * Math.sin(-ø);
-
-                                let outNodeX = group.x + outXAdjust;
-                                let outNodeY = group.y + outYAdjust;
-
-                                paths[pathId] = {
-                                    x1: nX,
-                                    y1: nY,
-                                    x2: outNodeX,
-                                    y2: outNodeY
-                                }
-
-                                pathId++;
+                                antiDist = oidx - outNode.oidx;
+                                clockDist = numOnOrbit - antiDist;
                             }
+
+                            if (clockDist > antiDist) {
+                                arcs[arcId] = {
+                                    x: group.x,
+                                    y: group.y,
+                                    radius,
+                                    øStart: -ø,
+                                    øEnd: -øOut,
+                                    aClock: true
+                                };
+                            }
+                            else {
+                                arcs[arcId] = {
+                                    x: group.x,
+                                    y: group.y,
+                                    radius,
+                                    øStart: -ø,
+                                    øEnd: -øOut,
+                                    aClock: false,
+                                    startId: nodeId,
+                                    outId: outId
+                                };
+                            }
+
+                            arcId++;
                         }
-                        else if (!((!outNode.ascendancyName && node.ascendancyName) || (outNode.ascendancyName && !node.ascendancyName))) {
+                        else if (!((!outNode.ascendancyName && node.ascendancyName) || (outNode.ascendancyName && !node.ascendancyName)) && (outNode.spc.length === 0 && node.spc.length === 0)) {
                             const outGroup = groups[outNode.g];
 
                             const outRadius = orbitRadii[outNode.o];
@@ -256,11 +254,16 @@ class SkillTree extends Component {
                             let outNodeX = outGroup.x + outXAdjust;
                             let outNodeY = outGroup.y + outYAdjust;
 
+                            let øPath = Math.atan2(outNodeY - nY, outNodeX - nX);
+                            let pathLength = Math.sqrt(Math.pow(outNodeY - nY, 2) + Math.pow(outNodeX - nX, 2));
+
                             paths[pathId] = {
                                 x1: nX,
                                 y1: nY,
-                                x2: outNodeX,
-                                y2: outNodeY
+                                w: pathLength,
+                                ø: øPath,
+                                startId: nodeId,
+                                outId: outId
                             }
 
                             pathId++;
@@ -269,16 +272,84 @@ class SkillTree extends Component {
 
                     ourNodes[nodeId].arcs = arcs;
                     ourNodes[nodeId].paths = paths;
+
+                    if (!ourGroups[groupKey].isAscendancy && ourNodes[nodeId].ascendancyName)
+                        ourGroups[groupKey].isAscendancy = true;
+
+                    if (ourNodes[nodeId].spc.length !== 0) {
+                        if (!ourGroups[groupKey].hasStartingNode)
+                            ourGroups[groupKey].hasStartingNode = true;
+
+                        if (ourNodes[nodeId].spc.length > 1) console.log(`Nodes can have more than one starting node apparently`);
+
+                        let nodeClass = Object.entries(classes).find(([classDesignation, classNumber]) => classNumber === ourNodes[nodeId].spc[0]);
+
+                        if (nodeClass[1] === opts.startClass) ourNodes[nodeId].active = true;
+
+                        switch (nodeClass[0].replace(/Class$/, ``)) {
+                            case 'Str':
+                                startingNodes[nodeId] = {
+                                    nodeId: nodeId,
+                                    id: nodeClass[1],
+                                    class: 'Marauder',
+                                    activeImageRoot: 'centermarauder'
+                                }
+                                break;
+                            case 'Dex':
+                                startingNodes[nodeId] = {
+                                    nodeId: nodeId,
+                                    id: nodeClass[1],
+                                    class: 'Ranger',
+                                    activeImageRoot: 'centerranger'
+                                }
+                                break;
+                            case 'Int':
+                                startingNodes[nodeId] = {
+                                    nodeId: nodeId,
+                                    id: nodeClass[1],
+                                    class: 'Witch',
+                                    activeImageRoot: 'centerwitch'
+                                }
+                                break;
+                            case 'StrDex':
+                                startingNodes[nodeId] = {
+                                    nodeId: nodeId,
+                                    id: nodeClass[1],
+                                    class: 'Duelist',
+                                    activeImageRoot: 'centerduelist'
+                                }
+                                break;
+                            case 'StrInt':
+                                startingNodes[nodeId] = {
+                                    nodeId: nodeId,
+                                    id: nodeClass[1],
+                                    class: 'Templar',
+                                    activeImageRoot: 'centertemplar'
+                                }
+                                break;
+                            case 'DexInt':
+                                startingNodes[nodeId] = {
+                                    nodeId: nodeId,
+                                    id: nodeClass[1],
+                                    class: 'Shadow',
+                                    activeImageRoot: 'centershadow'
+                                }
+                                break;
+                            case 'StrDexInt':
+                                startingNodes[nodeId] = {
+                                    nodeId: nodeId,
+                                    id: nodeClass[1],
+                                    class: 'Scion',
+                                    activeImageRoot: 'centerscion'
+                                }
+                                break;
+                            default: throw new Error(`Something went wrong with determining the class type: nodeClass: ${nodeClass}`);
+                        }
+                    }
                 }
-
-                if (!ourGroups[groupKey].isAscendancy && ourNodes[nodeId].ascendancyName)
-                    ourGroups[groupKey].isAscendancy = true;
-
-                if (!ourGroups[groupKey].hasStartingNode && ourNodes[nodeId].spc.length !== 0)
-                    ourGroups[groupKey].hasStartingNode = true;
             });
 
-            if (!ourGroups[groupKey].isAscendancy && !ourGroups[groupKey].hasStartingNode)
+            if (!ourGroups[groupKey].isAscendancy)// && !ourGroups[groupKey].hasStartingNode)
                 ourGroups[groupKey].circleType = findLargestOrbit(group.oo);
         });
 
@@ -294,18 +365,19 @@ class SkillTree extends Component {
             if (keystone[`z${i}`].h > tallest) tallest = keystone[`z${i}`].h;
         }
 
-        //console.log(`Widest: ${widest}, Tallest: ${tallest}`);
-
-        this.setState({
-            groups: ourGroups,
-            nodes: ourNodes,
-            hitPoints: hitPoints,
-            sizeConstants: {
-                widest: widest,
-                tallest: tallest,
-                normal: normal,
-                notable: notable,
-                keystone: keystone
+        this.setState(() => {
+            return {
+                groups: ourGroups,
+                nodes: ourNodes,
+                startingNodes: startingNodes,
+                hitPoints: hitPoints,
+                sizeConstants: {
+                    widest: widest,
+                    tallest: tallest,
+                    normal: normal,
+                    notable: notable,
+                    keystone: keystone
+                }
             }
         });
     }
@@ -399,6 +471,7 @@ class SkillTree extends Component {
             if (hitPoints[offX + x]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
                 for (let y = -(Math.floor(tallest / 2)); y < Math.ceil(tallest / 2); y++) { //Tallest is 100
                     if (hitPoints[offX + x][offY + y] && nodes[hitPoints[offX + x][offY + y]]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
+                        console.log(nodes[hitPoints[offX + x][offY + y]].adjacent);
                         switch (nodes[hitPoints[offX + x][offY + y]].nodeType) {
                             case 'normal':
                                 if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2)) {
@@ -446,14 +519,14 @@ class SkillTree extends Component {
     }
 
     render() {
-        const { groups, nodes, hitPoints, sizeConstants, loaded } = this.state;
+        const { groups, nodes, startingNodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
 
         return (
             <>
                 <div id='tree-container'>
                     <ImageSource finishedLoadingAssets={this.finishedLoadingAssets} />
-                    <TreeBase groups={groups} nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
+                    <TreeBase groups={groups} nodes={nodes} startingNodes={startingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                         canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
                         handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick} />
                 </div>

@@ -208,41 +208,65 @@ class SkillTree extends Component {
                             ourNodes[nodeId].adjacent.push(outId);
 
                         if (outNode.g === node.g && outNode.o === node.o) {
+                            //No arc is longer than 90° <-- (oops, that was wrong, there are 120° arcs) currently, so we'll only need to draw an arc out of one image
+                            //Arc images are layed out like this:
+                            /* //With a slight gap on the left and top edges
+                                           ....
+                                       ...
+                                    ...
+                                  ..
+                                ..
+                              ..
+                             ..
+                            */
+
+                            //Move to (x1,y1), which is a point on the circle at (group.x,group.y) with a radius based on the occupied orbit
+                            //Rotate so that (x2,y2) lies on the curve
+                            //Find ø between the two points on the circle
+                            //Width = image.width * cos(ø)
+                            //Height = image.height * cos(ø) //Start at image.height - Height, and then draw the remainingg length
+
                             let øOut = 90 * Math.PI / 180 - getOrbitAngle(outNode.oidx, numOnOrbit);
 
-                            let clockDist = 0;
-                            let antiDist = 0;
-                            if (outNode.oidx > oidx) {
-                                clockDist = outNode.oidx - oidx;
-                                antiDist = numOnOrbit - clockDist;
-                            }
-                            else {
-                                antiDist = oidx - outNode.oidx;
-                                clockDist = numOnOrbit - antiDist;
-                            }
+                            const outRadius = orbitRadii[outNode.o];
 
-                            if (clockDist > antiDist) {
-                                arcs[arcId] = {
-                                    x: group.x,
-                                    y: group.y,
-                                    radius,
-                                    øStart: -ø,
-                                    øEnd: -øOut,
-                                    aClock: true
-                                };
+                            let outXAdjust = outRadius * Math.cos(-øOut);
+                            let outYAdjust = outRadius * Math.sin(-øOut);
+
+                            let outNodeX = group.x + outXAdjust;
+                            let outNodeY = group.y + outYAdjust;
+
+                            let thisDist = Math.abs(outNode.oidx - oidx);
+                            let outDist = Math.abs(oidx - outNode.oidx);
+
+                            let thisFirst;
+                            if ((outNode.oidx >= 3 * numOnOrbit / 4 && oidx <= numOnOrbit / 4) || (oidx <= numOnOrbit / 3 && outNode.oidx >= 2 * numOnOrbit / 3 && numOnOrbit + oidx - outNode.oidx <= numOnOrbit / 3)) {
+                                thisFirst = false;
                             }
-                            else {
-                                arcs[arcId] = {
-                                    x: group.x,
-                                    y: group.y,
-                                    radius,
-                                    øStart: -ø,
-                                    øEnd: -øOut,
-                                    aClock: false,
-                                    startId: nodeId,
-                                    outId: outId
-                                };
+                            else if ((oidx >= 3 * numOnOrbit / 4 && outNode.oidx <= numOnOrbit / 4) || (oidx >= 2 * numOnOrbit / 3 && outNode.oidx <= numOnOrbit / 3 && numOnOrbit + outNode.oidx - oidx <= numOnOrbit / 3)) {
+                                thisFirst = true;
                             }
+                            else if (outNode.oidx < oidx) {
+                                thisFirst = false;
+                            }
+                            else thisFirst = true;
+
+                            let øBetween = thisFirst ? øOut - ø : ø - øOut;
+
+                            arcs[arcId] = {
+                                thisDist,
+                                outDist,
+                                thisFirst,
+                                myO: oidx,
+                                outO: outNode.oidx,
+                                orbit: node.o,
+                                x1: thisFirst ? nX : outNodeX,
+                                y1: thisFirst ? nY : outNodeY,
+                                ø: thisFirst ? -ø - (Math.PI) : -øOut - (Math.PI),
+                                øBetween: øBetween * 180 / Math.PI % 360,
+                                startId: thisFirst ? nodeId : outId,
+                                outId: thisFirst ? outId : nodeId
+                            };
 
                             arcId++;
                         }
@@ -537,6 +561,7 @@ class SkillTree extends Component {
         const { nodes } = this.state;
         const node = nodes[nodeId];
 
+        console.log(node.arcs);
         if (node && node.spc.length === 0 && !node.isAscendancyStart) {
             if (node.canTake === 1 || node.isBlighted) {
                 const adjacentChange = !node.active ? 1 : -1;
@@ -595,7 +620,6 @@ class SkillTree extends Component {
     setCharacter(nodeId) {
         const { nodes } = this.state;
 
-        console.log(nodes[nodeId]);
         if (nodes[nodeId] && nodes[nodeId].spc.length !== 0) {
             if (nodes[nodeId].active === false) {
                 this.resetTree();

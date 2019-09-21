@@ -159,11 +159,26 @@ class TreeBase extends Component {
                             ctx.fillStyle = "rgba(200,0,0,.5)";
                             ctx.strokeStyle = "rgba(150,150,0,.8)";
 
-                            const { x, y, radius, øStart, øEnd, aClock } = arc;
+                            const { orbit, x1, y1, ø, startId, outId } = arc;
 
-                            ctx.beginPath();
-                            ctx.arc(x, y, radius, øStart, øEnd, aClock);
-                            ctx.stroke();
+                            const arcId = `Orbit${orbit}${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
+                            const arcSrc = document.getElementById(`${arcId}`);
+
+                            const arcWidth = arcSrc.width / imageZoomLevels[zoomLvl];
+                            const arcHeight = arcSrc.height / imageZoomLevels[zoomLvl];
+
+                            const offX = nodes[startId].active && nodes[outId].active ? -10 / imageZoomLevels[zoomLvl] : -3 / imageZoomLevels[zoomLvl];
+                            const offY = 0//nodes[startId].active && nodes[outId].active ? 8 / imageZoomLevels[zoomLvl] : 1 / imageZoomLevels[zoomLvl];
+
+                            ctx.translate(x1, y1);
+                            ctx.rotate(ø);
+                            //ctx.beginPath();
+                            // ctx.moveTo(0, 0);
+                            // ctx.lineTo(0, radius / 3);
+                            // ctx.lineTo(radius / 3, radius / 3);
+                            //ctx.arc(x, y, radius, øStart, øEnd, aClock);
+                            //ctx.stroke();
+                            ctx.drawImage(arcSrc, offX, -(arcHeight + offY), arcWidth, arcHeight);
 
                             ctx.restore();
                         });
@@ -280,10 +295,10 @@ class TreeBase extends Component {
                             circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
 
                             ctx.save(); //Minus full image height since it's a half circle
-                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight, circleWidth, circleHeight);
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight + 2 / imageZoomLevels[zoomLvl], circleWidth, circleHeight);
                             ctx.translate(x, y);
                             ctx.rotate(Math.PI);
-                            ctx.drawImage(circleSrc, 0 - (circleWidth / 2), 0 - circleHeight, circleWidth, circleHeight);
+                            ctx.drawImage(circleSrc, 0 - (circleWidth / 2) + 1 / imageZoomLevels[zoomLvl], 0 - circleHeight + 2 / imageZoomLevels[zoomLvl], circleWidth, circleHeight);
                             ctx.restore();
                             break;
                     }

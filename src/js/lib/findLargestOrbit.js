@@ -8,6 +8,7 @@ function findLargestOrbit(orbits) {
     if (largest === 1) return 'small';
     if (largest === 2) return 'medium';
     if (largest >= 3 && orbits['3']) return 'large';
+    if (largest >= 3 && orbits['2']) return 'medium';
     return false;
 }
 

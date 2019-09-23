@@ -43,7 +43,7 @@ class TreeBase extends Component {
         //Redraw whole tree, later I'd like to only redraw the specific things that change if the state change
         //is something like a node being taken or the search bar updating
         ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale, 767 / 2 + canY * scale);
-        ctx.clearRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), 916 / scale, 767 / scale);
+        ctx.clearRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), Math.round(916 / scale), Math.round(767 / scale));
         this.drawTreeStructure();
         this.drawBackGround();
     }
@@ -52,6 +52,7 @@ class TreeBase extends Component {
         const { groups, nodes } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
+        const scaleAtCurrentZoomLevel = imageZoomLevels[zoomLvl];
 
         if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
             const canvas = this.canvasRef.current;
@@ -74,8 +75,8 @@ class TreeBase extends Component {
 
                         const src = document.getElementById(`${srcId}`);
 
-                        let destWidth = coords.w / imageZoomLevels[zoomLvl];
-                        let destHeight = coords.h / imageZoomLevels[zoomLvl];
+                        let destWidth = Math.round(coords.w / scaleAtCurrentZoomLevel);
+                        let destHeight = Math.round(coords.h / scaleAtCurrentZoomLevel);
 
                         if (node.spc.length === 0) {
                             if (!node.isAscendancyStart)
@@ -88,8 +89,8 @@ class TreeBase extends Component {
                                     frameId = `PSSkillFrame${active ? `Active` : canTake ? `Highlighted` : ``}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
-                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
-                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
 
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
                                 }
@@ -97,8 +98,8 @@ class TreeBase extends Component {
                                     frameId = `${node.isBlighted ? `Blighted` : ``}NotableFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
-                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
-                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
 
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
                                 }
@@ -106,8 +107,8 @@ class TreeBase extends Component {
                                     frameId = `KeystoneFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
-                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
-                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
 
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
                                 }
@@ -115,8 +116,8 @@ class TreeBase extends Component {
                                     frameId = `JewelFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
                                     frameSrc = document.getElementById(`${frameId}`)
 
-                                    frameWidth = frameSrc.width / imageZoomLevels[zoomLvl];
-                                    frameHeight = frameSrc.height / imageZoomLevels[zoomLvl];
+                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
 
                                     ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
                                 }
@@ -126,8 +127,8 @@ class TreeBase extends Component {
                                     const ascStartId = `PassiveSkillScreenAscendancyMiddle-${zoomLvl}`;
                                     const ascStartSrc = document.getElementById(`${ascStartId}`);
 
-                                    const ascStartWidth = ascStartSrc.width / imageZoomLevels[zoomLvl];
-                                    const ascStartHeight = ascStartSrc.height / imageZoomLevels[zoomLvl];
+                                    const ascStartWidth = Math.round(ascStartSrc.width / scaleAtCurrentZoomLevel);
+                                    const ascStartHeight = Math.round(ascStartSrc.height / scaleAtCurrentZoomLevel);
 
                                     ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
                                 }
@@ -135,8 +136,8 @@ class TreeBase extends Component {
                                     const ascSmallId = `PassiveSkillScreenAscendancyFrameSmall${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
                                     const ascSmallSrc = document.getElementById(`${ascSmallId}`);
 
-                                    const ascSmallWidth = ascSmallSrc.width / imageZoomLevels[zoomLvl];
-                                    const ascSmallHeight = ascSmallSrc.height / imageZoomLevels[zoomLvl];
+                                    const ascSmallWidth = Math.round(ascSmallSrc.width / scaleAtCurrentZoomLevel);
+                                    const ascSmallHeight = Math.round(ascSmallSrc.height / scaleAtCurrentZoomLevel);
 
                                     ctx.drawImage(ascSmallSrc, nX - (ascSmallWidth / 2), nY - (ascSmallHeight / 2), ascSmallWidth, ascSmallHeight);
                                 }
@@ -144,8 +145,8 @@ class TreeBase extends Component {
                                     const ascStartId = `PassiveSkillScreenAscendancyFrameLarge${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
                                     const ascStartSrc = document.getElementById(`${ascStartId}`);
 
-                                    const ascStartWidth = ascStartSrc.width / imageZoomLevels[zoomLvl];
-                                    const ascStartHeight = ascStartSrc.height / imageZoomLevels[zoomLvl];
+                                    const ascStartWidth = Math.round(ascStartSrc.width / scaleAtCurrentZoomLevel);
+                                    const ascStartHeight = Math.round(ascStartSrc.height / scaleAtCurrentZoomLevel);
 
                                     ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
                                 }
@@ -155,40 +156,40 @@ class TreeBase extends Component {
                         arcs.map((arc) => {
                             ctx.save();
                             ctx.globalCompositeOperation = 'destination-over';
-                            ctx.lineWidth = 4;
-                            ctx.fillStyle = "rgba(200,0,0,.5)";
-                            ctx.strokeStyle = "rgba(150,150,0,.8)";
+                            // ctx.lineWidth = 8;
+                            // ctx.fillStyle = "rgba(200,0,0,.5)";
+                            // ctx.strokeStyle = "rgba(150,150,0,.8)";
 
-                            const { orbit, x1, y1, ø, startId, outId } = arc;
+                            const { orbit, radius, x, y, ø, øBetween, startId, outId, gt90 } = arc;
 
                             const arcId = `Orbit${orbit}${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
                             const arcSrc = document.getElementById(`${arcId}`);
 
-                            const arcWidth = arcSrc.width / imageZoomLevels[zoomLvl];
-                            const arcHeight = arcSrc.height / imageZoomLevels[zoomLvl];
+                            const arcWidth = Math.round(arcSrc.width / scaleAtCurrentZoomLevel);
+                            const arcHeight = Math.round(arcSrc.height / scaleAtCurrentZoomLevel);
 
-                            const offX = nodes[startId].active && nodes[outId].active ? -10 / imageZoomLevels[zoomLvl] : -3 / imageZoomLevels[zoomLvl];
-                            const offY = 0//nodes[startId].active && nodes[outId].active ? 8 / imageZoomLevels[zoomLvl] : 1 / imageZoomLevels[zoomLvl];
+                            const offY = nodes[startId].active && nodes[outId].active ? 10 / imageZoomLevels[3] : 3 / imageZoomLevels[3];
 
-                            ctx.translate(x1, y1);
-                            ctx.rotate(ø);
-                            //ctx.beginPath();
-                            // ctx.moveTo(0, 0);
-                            // ctx.lineTo(0, radius / 3);
-                            // ctx.lineTo(radius / 3, radius / 3);
-                            //ctx.arc(x, y, radius, øStart, øEnd, aClock);
-                            //ctx.stroke();
-                            ctx.drawImage(arcSrc, offX, -(arcHeight + offY), arcWidth, arcHeight);
+                            ctx.translate(x, y);
+                            ctx.rotate(ø + (Math.PI / 2));
+                            ctx.beginPath();
+                            ctx.moveTo(0, radius);
+                            ctx.lineTo(0, 0);
+                            ctx.arc(0, radius, radius + offY + 1, -(Math.PI / 2), -(Math.PI / 2) - øBetween, true);
+                            ctx.clip();
+                            ctx.drawImage(arcSrc, -arcWidth, -offY, arcWidth, arcHeight);
+
+                            if (gt90) { //Draw part of another arc if ø is greater than 90 degrees
+                                ctx.translate(-arcWidth, arcHeight);
+                                ctx.rotate(-(Math.PI / 2));
+                                ctx.drawImage(arcSrc, -(arcWidth - offY - 1), 0, arcWidth, arcHeight);
+                            }
 
                             ctx.restore();
                         });
 
                         paths.map((path) => {
-                            ctx.save();
                             ctx.globalCompositeOperation = 'destination-over';
-                            ctx.lineWidth = 4;
-                            ctx.fillStyle = "rgba(200,0,0,.5)";
-                            ctx.strokeStyle = "rgba(150,150,0,.8)";
 
                             const { x1, y1, w, ø, startId, outId } = path;
 
@@ -197,13 +198,13 @@ class TreeBase extends Component {
 
                             if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
 
-                            const lineHeight = lineSrc.height / imageZoomLevels[zoomLvl];
+                            const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
 
                             const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
                             const decoSrc = document.getElementById(`${decoId}`);
 
-                            const decoWidth = decoSrc.width / imageZoomLevels[zoomLvl];
-                            const decoHeight = decoSrc.height / imageZoomLevels[zoomLvl];
+                            const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
+                            const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
 
                             ctx.translate(x1, y1);
                             ctx.rotate(ø);
@@ -211,8 +212,10 @@ class TreeBase extends Component {
                             ctx.scale(-1, 1);
                             ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
                             ctx.scale(-1, 1);
-                            ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), w, lineHeight)
-                            ctx.restore();
+                            ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
+                            ctx.rotate(-ø);
+                            ctx.translate(-x1, -y1);
+                            ctx.globalCompositeOperation = 'source-over';
                         });
                     }
                 });
@@ -224,11 +227,11 @@ class TreeBase extends Component {
         const { groups, nodes, startingNodes, ascStartingNodes } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
+        const scaleAtCurrentZoomLevel = imageZoomLevels[zoomLvl];
 
         const canvas = this.canvasRef.current;
         const ctx = canvas.getContext('2d');
 
-        ctx.save();
         ctx.globalCompositeOperation = 'destination-over';
 
         if (Object.values(startingNodes).length !== 0) {
@@ -236,8 +239,8 @@ class TreeBase extends Component {
                 const plaqueId = nodes[node.nodeId].active ? `${node.activeImageRoot}-${zoomLvl}` : `PSStartNodeBackgroundInactive-${zoomLvl}`;
                 const plaqueSrc = document.getElementById(`${plaqueId}`);
 
-                const plaqueWidth = plaqueSrc.width / imageZoomLevels[zoomLvl];
-                const plaqueHeight = plaqueSrc.height / imageZoomLevels[zoomLvl];
+                const plaqueWidth = Math.round(plaqueSrc.width / scaleAtCurrentZoomLevel);
+                const plaqueHeight = Math.round(plaqueSrc.height / scaleAtCurrentZoomLevel);
 
                 const { nX, nY } = nodes[node.nodeId];
 
@@ -251,8 +254,8 @@ class TreeBase extends Component {
                 const ascBackgroundId = `Classes${node.ascName}-${zoomLvl}`;
                 const ascBackgroundSrc = document.getElementById(`${ascBackgroundId}`);
 
-                const ascBackgroundWidth = ascBackgroundSrc.width / imageZoomLevels[zoomLvl];
-                const ascBackgroundHeight = ascBackgroundSrc.height / imageZoomLevels[zoomLvl];
+                const ascBackgroundWidth = Math.round(ascBackgroundSrc.width / scaleAtCurrentZoomLevel);
+                const ascBackgroundHeight = Math.round(ascBackgroundSrc.height / scaleAtCurrentZoomLevel);
 
                 const { nX, nY } = nodes[node.nodeId];
 
@@ -273,8 +276,8 @@ class TreeBase extends Component {
                             circleId = `PSGroupBackground1-${zoomLvl}`
                             circleSrc = document.getElementById(`${circleId}`)
 
-                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
-                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+                            circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
+                            circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
 
                             ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
                             break;
@@ -282,8 +285,8 @@ class TreeBase extends Component {
                             circleId = `PSGroupBackground2-${zoomLvl}`
                             circleSrc = document.getElementById(`${circleId}`)
 
-                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
-                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+                            circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
+                            circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
 
                             ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
                             break;
@@ -291,25 +294,27 @@ class TreeBase extends Component {
                             circleId = `PSGroupBackground3-${zoomLvl}`
                             circleSrc = document.getElementById(`${circleId}`)
 
-                            circleWidth = circleSrc.width / imageZoomLevels[zoomLvl];
-                            circleHeight = circleSrc.height / imageZoomLevels[zoomLvl];
+                            circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
+                            circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
 
-                            ctx.save(); //Minus full image height since it's a half circle
-                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight + 2 / imageZoomLevels[zoomLvl], circleWidth, circleHeight);
+                            //Minus full image height since it's a half circle
+                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight + 2 / scaleAtCurrentZoomLevel, circleWidth, circleHeight);
                             ctx.translate(x, y);
                             ctx.rotate(Math.PI);
-                            ctx.drawImage(circleSrc, 0 - (circleWidth / 2) + 1 / imageZoomLevels[zoomLvl], 0 - circleHeight + 2 / imageZoomLevels[zoomLvl], circleWidth, circleHeight);
-                            ctx.restore();
+                            ctx.drawImage(circleSrc, 0 - (circleWidth / 2) + 1 / scaleAtCurrentZoomLevel, 0 - circleHeight + 2 / scaleAtCurrentZoomLevel, circleWidth, circleHeight);
+                            ctx.rotate(-Math.PI);
+                            ctx.translate(-x, -y);
                             break;
                     }
                 }
             });
-
+            let fillHolder = ctx.fillStyle;
             ctx.fillStyle = ctx.createPattern(document.getElementById(`Background1-${zoomLvl}`), 'repeat');
-            ctx.fillRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), 916 / scale, 767 / scale);
+            ctx.fillRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), Math.round(916 / scale), Math.round(767 / scale));
+            ctx.fillStyle = fillHolder;
         }
 
-        ctx.restore();
+        ctx.globalCompositeOperation = 'source-over';
     }
 
     render() {

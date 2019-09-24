@@ -33,7 +33,6 @@ class TreeOverlay extends Component {
             const x = event.nativeEvent.offsetX;
             const y = event.nativeEvent.offsetY;
 
-
             const wOff = 20;
             const hOff = 40;
             const hLine = 20;
@@ -49,6 +48,7 @@ class TreeOverlay extends Component {
             ctx.lineWidth = 4;
             ctx.strokeStyle = 'seashell';
             ctx.fillStyle = '#000000cc';
+            ctx.textBaseline = 'middle';
             ctx.fillRect(0, 0, longest + wOff, hOff + sd.length * hLine);
             ctx.strokeRect(0, 0, longest + wOff, hOff + sd.length * hLine);
 

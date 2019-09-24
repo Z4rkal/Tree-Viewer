@@ -15,7 +15,8 @@ class TreeBase extends Component {
         this.updateCanvas();
     }
 
-
+    //Strength/Dex/Int Fill colors;
+    //"rgb(235,46,16)";"rgb(1,217,1)";"rgb(88,130,255)";
     updateCanvas() {
         const canvas = this.canvasRef.current;
         const ctx = canvas.getContext('2d');

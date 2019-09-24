@@ -774,7 +774,6 @@ export default SkillTree;
 
     Add overlay functionality *DONE*:
         - the second canvas is where the hover tooltips will go, hit detection needs to be working first
-
 */
 
 //TODO
@@ -785,4 +784,6 @@ export default SkillTree;
     *DONE* Implement another graph traversal algorithm to clear hanging nodes when the user deselects a node
 
     Expand the hitboxes around nodes to be the size of their frame, they feel way too small right now
+
+    Add undo/redo?
 */

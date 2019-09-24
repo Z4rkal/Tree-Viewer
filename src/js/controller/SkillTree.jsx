@@ -5,6 +5,7 @@ import findLargestOrbit from '../lib/findLargestOrbit';
 
 import ImageSource from '../components/ImageSource';
 import TreeBase from '../canvases/TreeBase';
+import TreeOverlay from '../canvases/TreeOverlay';
 
 import opts from '../../data/Tree';
 const { groups, nodes, constants } = opts.passiveSkillTreeData;
@@ -12,6 +13,8 @@ const { skillsPerOrbit, orbitRadii, classes } = constants;
 const { skillSprites, imageZoomLevels } = opts.passiveSkillTreeData;
 const { ascClasses } = opts;
 
+const CAN_WIDTH = 916;
+const CAN_HEIGHT = 767;
 
 class SkillTree extends Component {
     constructor() {
@@ -501,27 +504,28 @@ class SkillTree extends Component {
         let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale);
         let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale);
 
-        for (let x = -(Math.floor(widest / 2)); x < Math.ceil(widest / 2); x++) { //Widest is 100, so 100/2 is 50 units at most
-            if (hitPoints[offX + x]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
-                for (let y = -(Math.floor(tallest / 2)); y < Math.ceil(tallest / 2); y++) { //Tallest is 100
-                    if (hitPoints[offX + x][offY + y] && nodes[hitPoints[offX + x][offY + y]]) {//console.log(`Hit! ${hitPoints[offX + x]}`);
-                        switch (nodes[hitPoints[offX + x][offY + y]].nodeType) {
+        for (let x = -(Math.floor(widest / 2)); x < Math.ceil(widest / 2); x++) {
+            if (hitPoints[offX + x]) {
+                for (let y = -(Math.floor(tallest / 2)); y < Math.ceil(tallest / 2); y++) {
+                    if (hitPoints[offX + x][offY + y] && nodes[hitPoints[offX + x][offY + y]]) {
+                        const node = nodes[hitPoints[offX + x][offY + y]];
+                        switch (node.nodeType) {
                             case 'normal':
                                 if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2)) {
-                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
-                                    return true;//handleNodeClick(hitPoints[offX + x][offY + y]);//console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                    if (cb && typeof cb === 'function') cb(node, event);
+                                    return true;
                                 }
                                 return false;
                             case 'notable':
                                 if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2)) {
-                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
-                                    return true; //console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                    if (cb && typeof cb === 'function') cb(node, event);
+                                    return true;
                                 }
                                 return false;
                             case 'keystone':
                                 if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2)) {
-                                    if (cb && typeof cb === 'function') cb(hitPoints[offX + x][offY + y]);
-                                    return true; //console.log(`Hit! Node: ${hitPoints[offX + x][offY + y]}, Type: ${nodes[hitPoints[offX + x][offY + y]].nodeType}`);
+                                    if (cb && typeof cb === 'function') cb(node, event);
+                                    return true;
                                 }
                                 return false;
                             default: throw new Error(`Bad hit point value in checkHit`);
@@ -530,14 +534,13 @@ class SkillTree extends Component {
                 }
             }
         }
+        if (cb && typeof cb === 'function') cb(false, event);
         return false;
     }
 
-    handleNodeClick(nodeId) { //TODO: Check that node can be taken --> LATER: Take all nodes on shortest path to node if possible
-        const { nodes } = this.state;
-        const node = nodes[nodeId];
-
+    handleNodeClick(node) { //TODO: Check that node can be taken --> LATER: Take all nodes on shortest path to node if possible
         if (node && node.spc.length === 0 && !node.isAscendancyStart) {
+            const nodeId = node.id;
             if (node.canTake === 1 || node.isBlighted) {
                 const adjacentChange = !node.active ? 1 : -1;
 
@@ -629,9 +632,15 @@ class SkillTree extends Component {
             <>
                 <div id='tree-container'>
                     <ImageSource finishedLoadingAssets={this.finishedLoadingAssets} />
-                    <TreeBase groups={groups} nodes={nodes} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
-                        canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
-                        handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick} />
+                    <div id='tree-canvas-container' style={{ width: `${CAN_WIDTH}px`, height: `${CAN_HEIGHT}px` }}>
+                        <TreeBase CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
+                            groups={groups} nodes={nodes} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
+                            canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} />
+                        <TreeOverlay CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
+                            nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
+                            canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
+                            handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick} />
+                    </div>
                 </div>
             </>
         )
@@ -646,8 +655,7 @@ export default SkillTree;
         - node :
                 -- Priority --
             - *DONE* add boolean for being activated
-            - *DONE* calculate node type, maybe get rid of some of the booleans since they should be obsolete afterwards
-            - replace 'icon' property with object describing which source to pull from and containing coords from the skillSprites object
+            - *DONE* calculate node type, maybe get rid of some of the booleans since they should be obsolete afterward
             - *DONE* calculate position based on group once
             - *DONE* calculate coordinates for in-group arcs and paths
                 -- Secondary --
@@ -655,21 +663,19 @@ export default SkillTree;
             - add object describing stats for eventual skill calculator stuff
             - *DONE* calculate position for out-group paths
 
-    Find the rest of the assets:
+    Find the rest of the assets: *DONE*
         - *DONE* Circles
         - *DONE* Class images
         - *DONE* Ascendency images
         - *DONE* Path images
-        - Arc images
+        - *DONE* Arc images
         - *DONE* skill circles / notable borders / keystone borders
         - *DONE* maybe the little path end fancies
 
     Add hit detection: *DONE*
         - look into ctx.addHitRegion(), may need to calculate the paths and attach them to nodes ahead of time.
 
-    Add Middle tree functionality:
-        - the middle canvas is where the hover tooltips will go, hit detection needs to be working first
+    Add overlay functionality *DONE*:
+        - the second canvas is where the hover tooltips will go, hit detection needs to be working first
 
-    Add Top tree functionality:
-        - the top canvas is where the searchbar and number of points spent go in the original version, maybe not required for this
 */

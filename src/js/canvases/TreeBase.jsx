@@ -318,14 +318,12 @@ class TreeBase extends Component {
     }
 
     render() {
-        const { scale } = this.props;
-        const { isDragging, canClick } = this.props;
-        const { handleCanvasMouseDown, handleDrag, handleCanvasMouseUp, handleZoom, checkHit, handleNodeClick } = this.props;
+        const { CAN_WIDTH, CAN_HEIGHT } = this.props;
 
         return (
             <>
-                <div id='zoom-debug'>{Math.floor(scale * 1000) / 1000}</div>
-                <canvas className='skill-canvas' width='916' height='767' ref={this.canvasRef} onWheel={(e) => { if (!isDragging) handleZoom(e); }} onMouseDown={(e) => handleCanvasMouseDown(e)} onMouseMove={(e) => { if (isDragging) { handleDrag(e); }; }} onMouseUp={(e) => { if (isDragging) { handleCanvasMouseUp(e); }; }} onMouseLeave={(e) => { if (isDragging) { handleCanvasMouseUp(e); }; }} onClick={(e) => { if (canClick) { checkHit(e, handleNodeClick); }; }}>
+                {/* <div id='zoom-debug'>{Math.floor(scale * 1000) / 1000}</div> */}
+                <canvas className='skill-canvas' width={CAN_WIDTH} height={CAN_HEIGHT} ref={this.canvasRef}>
                     Sorry, your browser can't read canvas elements, normally the skill tree would render here :(
                 </canvas>
             </>

@@ -1,16 +1,25 @@
 #asset-source {
-    display: none;
+  display: none;
 }
 
 #tree-container {
-    display: flex;
+  display: flex;
+  justify-content: center;
 }
 
 #zoom-debug {
-    position: fixed;
+  position: fixed;
+}
+
+#tree-canvas-container {
+  position: relative;
+
+  pointer-events: none;
+  * {
+    pointer-events: initial;
+  }
 }
 
 .skill-canvas {
-    margin-left: auto;
-    margin-right: auto;
+  position: absolute;
 }

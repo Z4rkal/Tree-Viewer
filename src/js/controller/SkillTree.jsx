@@ -23,6 +23,8 @@ class SkillTree extends Component {
         this.state = {
             groups: {},
             nodes: {},
+            activeNodes: {},
+            classStartingNodeId: 0,
             startingNodes: {},
             ascStartingNodes: {},
             hitPoints: {},
@@ -49,6 +51,7 @@ class SkillTree extends Component {
         this.setCharacter = this.setCharacter.bind(this);
         this.toggleNode = this.toggleNode.bind(this);
         this.findPathToNode = this.findPathToNode.bind(this);
+        this.findHangingNodes = this.findHangingNodes.bind(this);
     }
 
     componentDidMount() {
@@ -549,7 +552,8 @@ class SkillTree extends Component {
             else if (node.canTake > 1) {
                 //TODO: determine whether removing a node with more than one adjacent active node will break the tree
                 //If it will, then remove the hanging nodes
-                this.toggleNode(node);
+                if (node.active) this.toggleNode(node, () => this.findHangingNodes(this.toggleNode));
+                else this.toggleNode(node);
             }
             else {
                 //Node canTake is 0, so take every node along the shortest path to the node
@@ -558,24 +562,35 @@ class SkillTree extends Component {
         }
     }
 
-    toggleNode(node) {
-        const nodeId = node.id;
-        const adjacentChange = !node.active ? 1 : -1;
-
+    toggleNode(node, cb) {
         this.setState((state) => {
-            return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } } }
-        });
+            const adjacentChange = !node.active ? 1 : -1;
+            const nodeId = node.id;
+            let activeNodes = { ...state.activeNodes };
+            let nodes = { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } };
 
-        for (let i = 0; i < node.adjacent.length; i++) {
-            this.setState((state) => {
+            for (let i = 0; i < node.adjacent.length; i++) {
                 const outNode = state.nodes[node.adjacent[i]];
 
                 if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
                 if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(`);
 
-                return { nodes: { ...state.nodes, [outNode.id]: { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange } } }
-            });
-        }
+                nodes[outNode.id] = { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange };
+            }
+
+            if (!state.nodes[nodeId].active) {
+                activeNodes[nodeId] = true;
+            }
+            else {
+                if (!activeNodes[nodeId]) throw new Error(`Tried to remove an inactive node from activeNodes`);
+                delete activeNodes[nodeId];
+            }
+
+            return {
+                nodes,
+                activeNodes
+            }
+        }, cb);
     }
 
     resetTree() {
@@ -599,7 +614,10 @@ class SkillTree extends Component {
                 const adjacentChange = 1;
 
                 this.setState((state) => {
-                    return { nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: true } } }
+                    return {
+                        nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: true } },
+                        classStartingNodeId: node.id
+                    }
                 });
 
                 for (let i = 0; i < node.adjacent.length; i++) {
@@ -630,13 +648,13 @@ class SkillTree extends Component {
             return len;
         }
 
-        const { nodes } = this.state;
+        const { nodes, startingNodes } = this.state;
         let visited = { [node.id]: 'root' };
         let queue = [node.id];
 
-        let done = false;
+        let found = false;
         let shortest = undefined;
-        while (queue.length !== 0 && !done) {
+        while (queue.length !== 0) {
             let curNode = nodes[queue.shift()];
 
             if (curNode.canTake) {
@@ -650,8 +668,10 @@ class SkillTree extends Component {
             if (!shortest || adjLen <= shortest) {
                 for (let i = 0; i < curNode.adjacent.length; i++) {
                     if (!visited[curNode.adjacent[i]]) {
-                        visited[curNode.adjacent[i]] = curNode.id;
-                        queue.push(nodes[curNode.adjacent[i]].id);
+                        if (!startingNodes[curNode.adjacent[i]]) {
+                            visited[curNode.adjacent[i]] = curNode.id;
+                            queue.push(nodes[curNode.adjacent[i]].id);
+                        }
                     }
                     else if (curNode.adjacent[i] !== visited[curNode.id] && adjLen < findLength(curNode.adjacent[i], visited)) {
                         visited[curNode.adjacent[i]] = curNode.id;
@@ -659,16 +679,45 @@ class SkillTree extends Component {
                     }
                 }
             }
+            if (queue.length === 0 && shortest) found = true;
         }
 
-        if (typeof cb === 'function') { //Use the callback for each node on the shortest path
-            for (let i = shortest[0]; i !== 'root' && visited[i]; i = visited[i]) {
-                cb(nodes[i]);
+        if (found) {
+            if (typeof cb === 'function') { //Use the callback for each node on the shortest path
+                for (let i = shortest[0]; i !== 'root' && visited[i]; i = visited[i]) {
+                    cb(nodes[i]);
+                }
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    findHangingNodes(cb) {
+        const { nodes, activeNodes, classStartingNodeId } = this.state;
+
+        let visited = { [classStartingNodeId]: true };
+        let queue = [classStartingNodeId];
+
+        while (queue.length !== 0) {
+            let curNode = nodes[queue.shift()];
+
+            for (let i = 0; i < curNode.adjacent.length; i++) {
+                if (activeNodes[curNode.adjacent[i]] && !visited[curNode.adjacent[i]]) {
+                    visited[curNode.adjacent[i]] = curNode.id;
+                    queue.push(nodes[curNode.adjacent[i]].id);
+                }
             }
         }
-        else { //Otherwise, return the closest node I guess
-            return shortest;
-        }
+
+        if (typeof cb === 'function') { //Use the callback for each node on the hanging parts of the tree
+            Object.keys(activeNodes).map((nodeId) => {
+                if (!visited[nodeId]) {
+                    cb(nodes[nodeId]);
+                }
+            });
+        };
     }
 
     render() {
@@ -729,10 +778,10 @@ export default SkillTree;
 
 //TODO
 /*
-    Implement BFS algorithm for finding paths to nodes
+    *DONE* Implement BFS algorithm for finding paths to nodes
         - Probably start from the destination node, and go until it finds a node the user can take -> node.canTake > 0
 
-    Implement another graph traversal algorithm to clear hanging nodes when the user deselects a node
+    *DONE* Implement another graph traversal algorithm to clear hanging nodes when the user deselects a node
 
-    See if I'm smart enough to write these in a way where I can preview these results without performance issues
+    Expand the hitboxes around nodes to be the size of their frame, they feel way too small right now
 */

@@ -25,6 +25,7 @@ class SkillTree extends Component {
             nodes: {},
             activeNodes: {},
             classStartingNodeId: 0,
+            ascClassname: '',
             startingNodes: {},
             ascStartingNodes: {},
             hitPoints: {},
@@ -648,7 +649,7 @@ class SkillTree extends Component {
             return len;
         }
 
-        const { nodes, startingNodes } = this.state;
+        const { nodes, startingNodes, ascClassname } = this.state;
         let visited = { [node.id]: 'root' };
         let queue = [node.id];
 
@@ -668,7 +669,7 @@ class SkillTree extends Component {
             if (!shortest || adjLen <= shortest) {
                 for (let i = 0; i < curNode.adjacent.length; i++) {
                     if (!visited[curNode.adjacent[i]]) {
-                        if (!startingNodes[curNode.adjacent[i]]) {
+                        if (!startingNodes[curNode.adjacent[i]] && (!nodes[curNode.adjacent[i]].ascendancyName || nodes[curNode.adjacent[i]].ascendancyName === ascClassname)) {
                             visited[curNode.adjacent[i]] = curNode.id;
                             queue.push(nodes[curNode.adjacent[i]].id);
                         }

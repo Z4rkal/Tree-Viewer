@@ -686,7 +686,7 @@ class SkillTree extends Component {
         if (found) {
             if (typeof cb === 'function') { //Use the callback for each node on the shortest path
                 for (let i = shortest[0]; i !== 'root' && visited[i]; i = visited[i]) {
-                    cb(nodes[i]);
+                    cb(nodes[i]); //Goes through the path in reverse, just something to note
                 }
             }
             return true;
@@ -714,7 +714,7 @@ class SkillTree extends Component {
 
         if (typeof cb === 'function') { //Use the callback for each node on the hanging parts of the tree
             Object.keys(activeNodes).map((nodeId) => {
-                if (!visited[nodeId]) {
+                if (!visited[nodeId] && !nodes[nodeId].isBlighted) {
                     cb(nodes[nodeId]);
                 }
             });
@@ -736,7 +736,8 @@ class SkillTree extends Component {
                         <TreeOverlay CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
                             nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
-                            handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick} />
+                            handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick}
+                            findPathToNode={this.findPathToNode} />
                     </div>
                 </div>
             </>

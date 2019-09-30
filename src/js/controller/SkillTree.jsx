@@ -1,7 +1,10 @@
 import React, { Component } from 'React';
+import Cookies from 'js-cookie';
 
 import getOrbitAngle from '../lib/getOrbitAngle';
 import findLargestOrbit from '../lib/findLargestOrbit';
+import decodeTreeUrl from '../lib/decodeTreeUrl';
+import encodeTreeUrl from '../lib/encodeTreeUrl';
 
 import ImageSource from '../components/ImageSource';
 import TreeBase from '../canvases/TreeBase';
@@ -41,6 +44,8 @@ class SkillTree extends Component {
             loaded: false
         };
 
+        this.handleDecode = this.handleDecode.bind(this);
+        this.handleEncode = this.handleEncode.bind(this);
         this.handleCanvasMouseDown = this.handleCanvasMouseDown.bind(this);
         this.handleDrag = this.handleDrag.bind(this);
         this.handleCanvasMouseUp = this.handleCanvasMouseUp.bind(this);
@@ -56,10 +61,34 @@ class SkillTree extends Component {
     }
 
     componentDidMount() {
-        this.handlePreCalcs();
+        let cb;
+
+        //Set tree state from a cookie if it exists on load
+        if (Cookies.get('last-session-tree')) {
+            const lastTreeBase64 = Cookies.get('last-session-tree');
+            if (lastTreeBase64 !== undefined);
+            cb = () => this.handleDecode(decodeTreeUrl(lastTreeBase64));
+        }
+        this.handlePreCalcs(cb);
+
+        if (true) { //Need to check whether the user wants cookies, but for now it's just me so I'll figure it out later
+            window.onbeforeunload = () => Cookies.set('last-session-tree', this.handleEncode());
+        }
     }
 
-    handlePreCalcs() {
+    handleDecode(loadedTreeState) {
+        const { nodes } = this.state;
+        const { startingClass, ascId, nodes: loadedNodes } = loadedTreeState;
+
+        this.setCharacter(Object.values(nodes).find((node) => node.spc.length !== 0 && node.spc[0] === startingClass).id, () => loadedNodes.map((nodeId) => this.toggleNode(nodes[nodeId])));
+    }
+
+    handleEncode() {
+        const { nodes, activeNodes, classStartingNodeId } = this.state;
+        return encodeTreeUrl(4, nodes[classStartingNodeId].spc[0], 0, activeNodes, 0);
+    }
+
+    handlePreCalcs(cb) {
         let ourGroups = {};
         let ourNodes = {};
         let startingNodes = {};
@@ -387,6 +416,20 @@ class SkillTree extends Component {
             if (keystone[`z${i}`].h > tallest) tallest = keystone[`z${i}`].h;
         }
 
+        if (cb === undefined) cb = () => {
+            if (initialActiveClass === undefined) {
+                console.log('Undefined Initial Active Class');
+                try {
+                    initialActiveClass = Object.values(ourNodes).find((node) => node.spc.length !== 0 && node.spc[0] === 0).id;
+                }
+                catch (error) {
+                    throw new Error(`Something is pretty wrong, couldn't find an initial starting node to activate`);
+                }
+            }
+
+            this.setCharacter(initialActiveClass);
+        };
+
         this.setState(() => {
             return {
                 groups: ourGroups,
@@ -402,19 +445,7 @@ class SkillTree extends Component {
                     keystone: keystone
                 }
             }
-        }, () => {
-            if (initialActiveClass === undefined) {
-                console.log('Undefined Initial Active Class');
-                try {
-                    initialActiveClass = Object.values(ourNodes).find((node) => node.spc.length !== 0 && node.spc[0] === 0).id;
-                }
-                catch (error) {
-                    throw new Error(`Something is pretty wrong, couldn't find an initial starting node to activate`);
-                }
-            }
-
-            this.setCharacter(initialActiveClass);
-        });
+        }, cb);
     }
 
     finishedLoadingAssets() {
@@ -579,12 +610,14 @@ class SkillTree extends Component {
                 nodes[outNode.id] = { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange };
             }
 
-            if (!state.nodes[nodeId].active) {
-                activeNodes[nodeId] = true;
-            }
-            else {
-                if (!activeNodes[nodeId]) throw new Error(`Tried to remove an inactive node from activeNodes`);
-                delete activeNodes[nodeId];
+            if (!state.startingNodes[nodeId] && !state.ascStartingNodes[nodeId]) {
+                if (!state.nodes[nodeId].active) {
+                    activeNodes[nodeId] = true;
+                }
+                else {
+                    if (!activeNodes[nodeId]) throw new Error(`Tried to remove an inactive node from activeNodes`);
+                    delete activeNodes[nodeId];
+                }
             }
 
             return {
@@ -594,43 +627,28 @@ class SkillTree extends Component {
         }, cb);
     }
 
-    resetTree() {
-        const { nodes } = this.state;
+    resetTree(cb) {
+        this.setState((state) => {
+            let nodes = { ...state.nodes };
 
-        Object.values(nodes).map((node) => {
-            this.setState((state) => {
-                return { nodes: { ...state.nodes, [node.id]: { ...state.nodes[node.id], active: !state.nodes[node.id].m ? false : null, canTake: 0 } } }
+            Object.keys(state.nodes).map((nodeId) => {
+                nodes[nodeId] = { ...state.nodes[nodeId], active: !state.nodes[nodeId].m ? false : null, canTake: 0 }
             });
-        });
+
+            return {
+                nodes,
+                activeNodes: {}
+            }
+        }, cb);
     }
 
-    setCharacter(nodeId) {
+    setCharacter(nodeId, cb) {
         const { nodes } = this.state;
 
         if (nodes[nodeId] && nodes[nodeId].spc.length !== 0) {
             if (nodes[nodeId].active === false) {
-                this.resetTree();
-
                 const node = nodes[nodeId];
-                const adjacentChange = 1;
-
-                this.setState((state) => {
-                    return {
-                        nodes: { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: true } },
-                        classStartingNodeId: node.id
-                    }
-                });
-
-                for (let i = 0; i < node.adjacent.length; i++) {
-                    this.setState((state) => {
-                        const outNode = state.nodes[node.adjacent[i]];
-
-                        if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
-                        if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(`);
-
-                        return { nodes: { ...state.nodes, [outNode.id]: { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange } } }
-                    });
-                }
+                this.resetTree(() => this.setState(() => { return { classStartingNodeId: nodeId } }, () => this.toggleNode(node, cb)));
             }
         }
         else throw new Error(`Tried to set character using invalid node: ${nodeId}`);
@@ -703,7 +721,9 @@ class SkillTree extends Component {
 
         while (queue.length !== 0) {
             let curNode = nodes[queue.shift()];
-
+            if (!curNode || !curNode.adjacent) {
+                console.log(this.state, classStartingNodeId, curNode);
+            }
             for (let i = 0; i < curNode.adjacent.length; i++) {
                 if (activeNodes[curNode.adjacent[i]] && !visited[curNode.adjacent[i]]) {
                     visited[curNode.adjacent[i]] = curNode.id;
@@ -787,4 +807,6 @@ export default SkillTree;
     Expand the hitboxes around nodes to be the size of their frame, they feel way too small right now
 
     Add undo/redo?
+
+    Add a cookie yes/no prompt
 */

@@ -336,7 +336,7 @@ class SkillTree extends Component {
                         if (ourNodes[nodeId].spc.length > 1) console.log(`Nodes can have more than one starting node apparently`);
 
                         let nodeClass = Object.entries(classes).find(([classDesignation, classNumber]) => classNumber === ourNodes[nodeId].spc[0]);
-
+                        //Unnecessary nowwww
                         if (nodeClass[1] === opts.startClass) initialActiveClass = nodeId;
 
                         switch (nodeClass[0].replace(/Class$/, ``)) {
@@ -452,7 +452,7 @@ class SkillTree extends Component {
                 }
             }
 
-            this.setCharacter(initialActiveClass);
+            this.setCharacter(0);//initialActiveClass);
         };
 
         this.setState(() => {

@@ -1,4 +1,4 @@
-import React, { Component } from 'React';
+import React, { Component } from 'react';
 import Cookies from 'js-cookie';
 
 import getOrbitAngle from '../lib/getOrbitAngle';

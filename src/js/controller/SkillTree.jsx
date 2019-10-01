@@ -444,7 +444,7 @@ class SkillTree extends Component {
             if (initialActiveClass === undefined) {
                 console.log('Undefined Initial Active Class');
                 try {
-                    initialActiveClass = Object.values(startingNodes).find((node) => node.id === 0).id;
+                    initialActiveClass = 0;//Object.values(startingNodes).find((node) => node.id === 0).id;
                     //Object.values(ourNodes).find((node) => node.spc.length !== 0 && node.spc[0] === 0).id;
                 }
                 catch (error) {

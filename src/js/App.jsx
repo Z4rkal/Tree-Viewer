@@ -24,7 +24,9 @@ class App extends Component {
 
     render() {
         return (
-            <SkillTree />
+            <div id='app-container'>
+                <SkillTree />
+            </div>
         )
     }
 }

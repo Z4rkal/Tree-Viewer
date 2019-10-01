@@ -2,9 +2,16 @@
   display: none;
 }
 
-#tree-container {
+#app-container {
   display: flex;
   justify-content: center;
+}
+
+#tree-container,
+#upper-tree-space,
+#lower-tree-space {
+  display: flex;
+  flex-direction: column;
 }
 
 #zoom-debug {

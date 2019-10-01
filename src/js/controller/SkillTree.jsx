@@ -920,6 +920,31 @@ export default SkillTree;
     Expand the hitboxes around nodes to be the size of their frame, they feel way too small right now
 
     Add undo/redo?
+        -Shouldn't be too hard to do, just build an array with nodes that were toggled since the last action
 
-    Add a cookie yes/no prompt
+    Make sure that a broken cookie can't dismantle everything and stop the app from working
+
+    Add a cookie yes/no prompt, or swap from automatically saving on exit to using save slots and a save/saveas button
+
+    Add character stats around the starting plaque
+
+    Next Steps: Weeks 3/4
+        --Primary: Start working on the stat handler
+            -Decide how it'll interact with SkillTree
+                -Current thoughts: have it sit above the skill tree and get updates whenever a node is toggled
+                    -Could have a handleNodeChange function passed down as a prop, and call it with the node being toggled
+                    and a boolean for whether the node is being taken or removed inside of the updater toggleNode creates
+
+        --Secondary: Optimization for existing stuff
+            -Do an optimization pass on SkillTree.jsx methods
+                -I've optimized the canvas a fair bit since I got it working, but most of the SkillTree methods are unecessarily
+                expensive and haven't been touched since I slapped them together
+            -Optimize the Base Canvas some more:
+                -Could make one clip region per group that covers all the arcs to cut down on ctx.save/restore even further
+                    -ctx.save and ctx.restore are the --wooorst-- when it comes to performance, but there's somehow no alternatives
+                    for clearing clip regions (whyyyy????)
+                -Figure out how to save the image into tiles and only update the tiles when necessary, then simply draw the
+                tiles as the canvas is moved/zoomed around
+                    -seems like a big task, but should be a sizable performance boost over drawing all the paths
+                    and especially arcs every single update
 */

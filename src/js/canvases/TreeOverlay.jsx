@@ -133,6 +133,8 @@ class TreeOverlay extends Component {
         const { hoverNode: node, hoverX: x, hoverY: y } = this.state;
         const { dn: name, sd } = node;
 
+        /////////////////////// Box Size Calculations /////////////////////////
+        /////////// Node Name and Description
         const headFont = '12pt FontinBold';
         const bodyFont = '10pt FontinBold';
 
@@ -147,23 +149,48 @@ class TreeOverlay extends Component {
         const wOff = 20;
         const hOff = 40;
         const hLine = 20;
+        /////////// Extra Info
+        const { pathToHoveredNode } = this.state;
+        const debugFont = '8pt FontInBold';
 
+        let extraHOff = 30;
+
+        const nodeIdText = `Node ID: ${node.id}`;
+        ctx.font = debugFont;
+        const nodeIdLength = ctx.measureText(nodeIdText).width;
+
+        let alloCostText = '';
+        let dispAlloCost = false;
+        if (pathToHoveredNode.length >= 1 && !node.active && node.spc.length === 0 && !node.isAscendancyStart) {
+            dispAlloCost = true;
+            const pointsToNode = pathToHoveredNode.length;
+
+            ctx.font = bodyFont;
+            alloCostText = `${pointsToNode} Point${pointsToNode !== 1 ? `s` : ``} to Allocate`;
+            const alloCostLength = ctx.measureText(alloCostText).width;
+
+            if (longest < alloCostLength + nodeIdLength + 5) {
+                longest = alloCostLength + nodeIdLength + 5;
+            }
+        }
+        else if (longest < nodeIdLength) longest = nodeIdLength;
+        ///////////////////////////////////////////////////////////////////////
         let xOff = 0;
         let yOff = 0;
         if (x + longest + wOff > CAN_WIDTH)
             xOff = x + longest + wOff - CAN_WIDTH;
-        if (y + hOff + sd.length * hLine > CAN_HEIGHT)
-            yOff = y + hOff + sd.length * hLine - CAN_HEIGHT;
+        if (y + hOff + sd.length * hLine + extraHOff > CAN_HEIGHT)
+            yOff = y + hOff + sd.length * hLine + extraHOff - CAN_HEIGHT;
 
         ctx.translate(x - xOff, y - yOff);
         ctx.lineWidth = 4;
         ctx.strokeStyle = 'seashell';
         ctx.fillStyle = '#000000cc';
         ctx.textBaseline = 'middle';
-        ctx.fillRect(0, 0, longest + wOff, hOff + sd.length * hLine);
-        ctx.strokeRect(0, 0, longest + wOff, hOff + sd.length * hLine);
+        ctx.fillRect(0, 0, longest + wOff, hOff + sd.length * hLine + extraHOff);
+        ctx.strokeRect(0, 0, longest + wOff, hOff + sd.length * hLine + extraHOff);
 
-        ctx.fillStyle = 'rgb(200,200,200)';
+        ctx.fillStyle = '#c8c8c8';
         ctx.font = headFont;
         ctx.fillText(name, wOff / 2, hOff / 2);
 
@@ -172,6 +199,26 @@ class TreeOverlay extends Component {
             ctx.fillText(sd[i], wOff / 2, hOff / 2 + hLine * (i + 1));
         }
 
+        ctx.translate(0, hOff + sd.length * hLine);
+
+        ctx.lineWidth = 2;
+        ctx.beginPath()
+        ctx.moveTo(0, 0);
+        ctx.lineTo(longest + wOff, 0);
+        ctx.stroke();
+
+        if (dispAlloCost) {
+            ctx.font = bodyFont;
+            ctx.fillText(alloCostText, wOff / 2, hLine - 5);
+        }
+
+        ctx.textAlign = 'end';
+        ctx.font = debugFont;
+        ctx.fillStyle = '#a5a5a5';
+        ctx.fillText(nodeIdText, longest + wOff / 2, hLine - 5);
+        
+        ctx.textAlign = 'start';
+        ctx.translate(0, -(hOff + sd.length * hLine));
         ctx.translate(-(x - xOff), -(y - yOff));
     }
 

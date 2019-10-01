@@ -194,7 +194,7 @@ class TreeOverlay extends Component {
                     this.setState(() => {
                         return { pathToHoveredNode: [] };
                     });
-                    findPathToNode(node, this.addToHoverPath);
+                    findPathToNode(node.id, this.addToHoverPath);
                 }
             });
 
@@ -220,9 +220,9 @@ class TreeOverlay extends Component {
         }
     }
 
-    addToHoverPath(node) {
+    addToHoverPath(nodeId) {
         this.setState((state) => {
-            return { pathToHoveredNode: [...state.pathToHoveredNode, node.id] }
+            return { pathToHoveredNode: [...state.pathToHoveredNode, nodeId] }
         });
     }
 

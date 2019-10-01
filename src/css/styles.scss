@@ -7,11 +7,18 @@
   justify-content: center;
 }
 
-#tree-container,
+#tree-container {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+}
+
 #upper-tree-space,
 #lower-tree-space {
   display: flex;
-  flex-direction: column;
+  align-items: center;
 }
 
 #zoom-debug {
@@ -29,4 +36,62 @@
 
 .skill-canvas {
   position: absolute;
+}
+
+.tree-row {
+  background-color: #333333;
+  border: 2px solid #dddddd;
+  color: #f7c8d8;
+}
+
+.tree-row:first-of-type {
+  border-top-width: 4px;
+}
+
+.tree-row:last-of-type {
+  border-bottom-width: 4px;
+}
+
+.canvas-info-container {
+  p {
+    display: inline;
+  }
+
+  > *:nth-child(n+2):not(button) {
+    margin-left: 2rem;
+  }
+
+  margin-right: 2rem;
+}
+
+#export-bar {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.info-popout {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    
+    width: 30%;
+    max-width: 30%;
+    height: 20%;
+    max-height: 20%;
+    margin-left: -15%;
+    margin-top: -10%;
+}
+
+#export-url-container {
+    display: flex;
+    flex-wrap: wrap;
+    background-color: #333333;
+    border: 2px solid #dddddd;
+    color: #f7c8d8;
+
+    > button {
+        height: fit-content;
+        margin-left: auto;
+        margin-top: auto;
+    }
 }

@@ -19,7 +19,7 @@ const { skillSprites, imageZoomLevels } = opts.passiveSkillTreeData;
 const { ascClasses } = opts;
 
 const CAN_WIDTH = 916;
-const CAN_HEIGHT = 767;
+const CAN_HEIGHT = 742;
 
 class SkillTree extends Component {
     constructor() {
@@ -74,7 +74,7 @@ class SkillTree extends Component {
         if (Cookies.get('last-session-tree')) {
             const lastTreeBase64 = Cookies.get('last-session-tree');
             if (lastTreeBase64 !== undefined);
-            cb = () => this.handleDecode(decodeTreeUrl(lastTreeBase64));
+            cb = () => this.handleDecode(lastTreeBase64);
         }
         this.handlePreCalcs(cb);
 
@@ -83,11 +83,13 @@ class SkillTree extends Component {
         }
     }
 
-    handleDecode(loadedTreeState) {
+    handleDecode(base64Str) {
         const { startingNodes, nodes } = this.state;
+
+        const loadedTreeState = decodeTreeUrl(base64Str);
         const { startingClass, ascId, nodes: loadedNodes } = loadedTreeState;
 
-        this.setCharacter(Object.values(startingNodes).find((node) => node.id === startingClass).id, () => this.setAscClass(ascId, () => loadedNodes.map((nodeId) => this.toggleNode(nodes[nodeId]))));
+        this.setCharacter(Object.values(startingNodes).find((node) => node.id === startingClass).id, () => this.setAscClass(ascId, () => loadedNodes.map((nodeId) => this.toggleNode(nodeId))));
     }
 
     handleEncode() {
@@ -602,25 +604,27 @@ class SkillTree extends Component {
         if (node && node.spc.length === 0 && !node.isAscendancyStart) {
 
             if (node.canTake === 1 || node.isBlighted) {
-                this.toggleNode(node);
+                this.toggleNode(node.id);
             }
             else if (node.canTake > 1) {
                 //TODO: determine whether removing a node with more than one adjacent active node will break the tree
                 //If it will, then remove the hanging nodes
-                if (node.active) this.toggleNode(node, () => this.findHangingNodes(this.toggleNode));
-                else this.toggleNode(node);
+                if (node.active) this.toggleNode(node.id, () => this.findHangingNodes(this.toggleNode));
+                else this.toggleNode(node.id);
             }
             else {
                 //Node canTake is 0, so take every node along the shortest path to the node
-                this.findPathToNode(node, this.toggleNode);
+                this.findPathToNode(node.id, this.toggleNode);
             }
         }
     }
 
-    toggleNode(node, cb) {
+    toggleNode(nodeId, cb) {
         this.setState((state) => {
+            const node = state.nodes[nodeId];
+            if (!node) throw new Error(`Invalid Node Id: ${nodeId}`);
+
             const adjacentChange = !node.active ? 1 : -1;
-            const nodeId = node.id;
             let activeNodes = { ...state.activeNodes };
             let nodes = { ...state.nodes, [nodeId]: { ...state.nodes[nodeId], active: !state.nodes[nodeId].active } };
             let { pointsUsed, ascPointsUsed } = state;
@@ -629,7 +633,7 @@ class SkillTree extends Component {
                 const outNode = state.nodes[node.adjacent[i]];
 
                 if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
-                if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(`);
+                if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(\nNode: ${node}\nOut Node: ${JSON.stringify(outNode)}`);
 
                 nodes[outNode.id] = { ...state.nodes[outNode.id], canTake: state.nodes[outNode.id].canTake + adjacentChange };
             }
@@ -676,7 +680,10 @@ class SkillTree extends Component {
                 nodes,
                 activeNodes: {},
                 pointsUsed: 0,
-                ascPointsUsed: 0
+                ascPointsUsed: 0,
+                classStartingNodeId: 0,
+                ascClassId: 0,
+                ascClassname: ''
             }
         }, cb);
     }
@@ -692,7 +699,7 @@ class SkillTree extends Component {
         const node = nodes[nodeId];
 
         if (node) {
-            this.resetTree(() => this.setState(() => { return { classStartingNodeId: nodeId, ascClassId: 0 } }, () => this.toggleNode(node, cb)));
+            this.resetTree(() => this.setState(() => { return { classStartingNodeId: nodeId, ascClassId: 0 } }, () => this.toggleNode(nodeId, cb)));
         }
         else throw new Error(`Tried to set character using invalid node: ${nodeId}`);
     }
@@ -710,11 +717,11 @@ class SkillTree extends Component {
                 if (!ascClass) throw new Error(`Failed to find ascension class for character ${characterClass.id}, with id: ${ascId}`);
 
                 Object.keys(activeNodes).map((nodeId) => {
-                    if (nodes[nodeId].ascendancyName && nodes[nodeId].active && nodes[nodeId].ascendancyName !== ascClass.ascName) this.toggleNode(nodes[nodeId]);
+                    if (nodes[nodeId].ascendancyName && nodes[nodeId].active && nodes[nodeId].ascendancyName !== ascClass.ascName) this.toggleNode(nodeId);
                 });
 
                 Object.values(ascStartingNodes).map((node) => {
-                    if (nodes[node.nodeId].active) this.toggleNode(nodes[node.nodeId]);
+                    if (nodes[node.nodeId].active) this.toggleNode(node.nodeId);
                 });
 
                 this.setState(() => {
@@ -722,15 +729,15 @@ class SkillTree extends Component {
                         ascClassId: ascId,
                         ascClassname: ascClass.ascName
                     }
-                }, () => this.toggleNode(nodes[ascClass.nodeId], cb));
+                }, () => this.toggleNode(ascClass.nodeId, cb));
             }
             else {
                 Object.keys(activeNodes).map((nodeId) => {
-                    if (nodes[nodeId].ascendancyName && nodes[nodeId].active) this.toggleNode(nodes[nodeId]);
+                    if (nodes[nodeId].ascendancyName && nodes[nodeId].active) this.toggleNode(nodeId);
                 });
 
                 Object.values(ascStartingNodes).map((node) => {
-                    if (nodes[node.nodeId].active) this.toggleNode(nodes[node.nodeId]);
+                    if (nodes[node.nodeId].active) this.toggleNode(node.nodeId);
                 });
 
                 this.setState(() => {
@@ -747,7 +754,7 @@ class SkillTree extends Component {
         }
     }
 
-    findPathToNode(node, cb) {
+    findPathToNode(nodeId, cb) {
         function findLength(nodeId, visited) {
             let curId = nodeId;
             let len = 0;
@@ -761,8 +768,12 @@ class SkillTree extends Component {
         }
 
         const { nodes, startingNodes, ascClassname } = this.state;
-        let visited = { [node.id]: 'root' };
-        let queue = [node.id];
+
+        const startingNode = nodes[nodeId];
+        if (!startingNode) throw new Error(`Invalid starting Node Id in findPathToNode: ${nodeId}`);
+
+        let visited = { [nodeId]: 'root' };
+        let queue = [nodeId];
 
         let found = false;
         let shortest = undefined;
@@ -796,8 +807,8 @@ class SkillTree extends Component {
 
         if (found) {
             if (typeof cb === 'function') { //Use the callback for each node on the shortest path
-                for (let i = shortest[0]; i !== 'root' && visited[i]; i = visited[i]) {
-                    cb(nodes[i]); //Goes through the path in reverse, just something to note
+                for (let pathNodeId = shortest[0]; pathNodeId !== 'root' && visited[pathNodeId]; pathNodeId = visited[pathNodeId]) {
+                    cb(pathNodeId); //Goes through the path in reverse, just something to note
                 }
             }
             return true;
@@ -828,7 +839,7 @@ class SkillTree extends Component {
         if (typeof cb === 'function') { //Use the callback for each node on the hanging parts of the tree
             Object.keys(activeNodes).map((nodeId) => {
                 if (!visited[nodeId] && !nodes[nodeId].isBlighted) {
-                    cb(nodes[nodeId]);
+                    cb(nodeId);
                 }
             });
         };
@@ -858,7 +869,8 @@ class SkillTree extends Component {
                             findPathToNode={this.findPathToNode} />
                     </div>
                     <div id='lower-tree-space' className='tree-row'>
-                        <PostCanvasContent />
+                        <PostCanvasContent loaded={loaded}
+                            handleDecode={this.handleDecode} handleEncode={this.handleEncode} />
                     </div>
                 </div>
             </>

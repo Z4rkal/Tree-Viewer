@@ -5,7 +5,7 @@ class PreCanvasContent extends Component {
         const { startingNodes, ascStartingNodes, classStartingNodeId, ascClassId, pointsUsed, ascPointsUsed, loaded } = this.props;
         const { setCharacter, setAscClass } = this.props;
 
-        if (!loaded)
+        if (!loaded || classStartingNodeId === 0)
             return (
                 <div></div>
             )

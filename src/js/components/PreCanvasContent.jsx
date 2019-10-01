@@ -12,7 +12,7 @@ class PreCanvasContent extends Component {
 
         const characterClass = startingNodes[classStartingNodeId];
 
-        const maxPoints = 124;
+        const maxPoints = 123; //99 possible from leveling, 22 possible from quests, 2 possible from bandit reward
         const maxAscPoints = 8;
 
         return (

@@ -1,4 +1,4 @@
-import React, { Component } from 'React';
+import React, { Component } from 'react';
 
 import { passiveSkillTreeData } from '../../data/Tree';
 const { skillSprites, imageZoomLevels } = passiveSkillTreeData;

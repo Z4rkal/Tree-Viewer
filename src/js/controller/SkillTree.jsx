@@ -713,7 +713,7 @@ class SkillTree extends Component {
                     else if (node.isAscendancyStart) {
                         currentAction.push({ changeType: 'asc-change', node: nodeId, prevAscId: state.ascStartingNodes[nodeId].ascId, prevAscName: node.ascendancyName, newAscId: 0, newAscName: '' });
                     }
-                    else currentAction.push(nodeId);
+                    currentAction.push(nodeId);
                 }
                 else if (nodeId === targetNode.id && !node.active) {
                     nodes[nodeId] = { ...nodes[nodeId], active: true };
@@ -727,6 +727,7 @@ class SkillTree extends Component {
                     }
 
                     currentAction.push({ changeType: 'new-class', node: nodeId, classId: state.startingNodes[nodeId].id, class: state.startingNodes[nodeId].class });
+                    currentAction.push(nodeId);
                 }
             });
 
@@ -759,14 +760,23 @@ class SkillTree extends Component {
                     if (nodes[nodeId].ascendancyName && nodes[nodeId].active && nodes[nodeId].ascendancyName !== ascClass.ascName) this.toggleNode(nodeId);
                 });
 
+                let prevAscId = 0;
+                let prevAscName = '';
                 Object.values(ascStartingNodes).map((node) => {
-                    if (nodes[node.nodeId].active) this.toggleNode(node.nodeId);
+                    if (nodes[node.nodeId].active) {
+                        prevAscId = node.ascId;
+                        prevAscName = node.ascName;
+                        this.toggleNode(node.nodeId);
+                    }
                 });
 
-                this.setState(() => {
+                const actionToAdd = { changeType: 'asc-change', node: ascClass.nodeId, prevAscId, prevAscName, newAscId: ascId, newAscName: ascClass.ascName };
+
+                this.setState((state) => {
                     return {
                         ascClassId: ascId,
-                        ascClassname: ascClass.ascName
+                        ascClassname: ascClass.ascName,
+                        treeActions: [state.treeActions[0] ? [...state.treeActions[0], actionToAdd] : [actionToAdd], ...state.treeActions.slice(1)]
                     }
                 }, () => this.toggleNode(ascClass.nodeId, cb));
             }
@@ -775,14 +785,24 @@ class SkillTree extends Component {
                     if (nodes[nodeId].ascendancyName && nodes[nodeId].active) this.toggleNode(nodeId);
                 });
 
+                let prevAscId = 0;
+                let prevAscName = '';
+                let prevNode = 0;
                 Object.values(ascStartingNodes).map((node) => {
-                    if (nodes[node.nodeId].active) this.toggleNode(node.nodeId);
+                    if (nodes[node.nodeId].active) {
+                        prevAscId = node.ascId;
+                        prevAscName = node.ascName;
+                        this.toggleNode(node.nodeId);
+                    }
                 });
 
-                this.setState(() => {
+                const actionToAdd = { changeType: 'asc-change', node: prevNode, prevAscId, prevAscName, newAscId: ascId, newAscName: '' };
+
+                this.setState((state) => {
                     return {
                         ascClassId: ascId,
-                        ascClassname: ''
+                        ascClassname: '',
+                        treeActions: [state.treeActions[0] ? [...state.treeActions[0], actionToAdd] : [actionToAdd], ...state.treeActions.slice(1)]
                     }
                 }, cb);
             }
@@ -878,7 +898,7 @@ class SkillTree extends Component {
         if (typeof cb === 'function') { //Use the callback for each node on the hanging parts of the tree
             Object.keys(activeNodes).map((nodeId) => {
                 if (!visited[nodeId] && !nodes[nodeId].isBlighted) {
-                    cb(parseInt(nodeId));
+                    cb(nodeId);
                 }
             });
         };
@@ -940,9 +960,9 @@ class SkillTree extends Component {
                                 ascClassname = action.prevAscName;
                                 break;
                         }
-                        this.toggleNode(action.node, null, true);
+                        // this.toggleNode(action.node, null, true);
                     }
-                    else if (typeof action === 'number') {
+                    else if (typeof action === 'number' || typeof action === 'string') {
                         this.toggleNode(action, null, true);
                     }
                     else throw new Error(`Bad action (${action}, type: ${typeof action}) in handleUndo`);
@@ -981,9 +1001,9 @@ class SkillTree extends Component {
                                 ascClassname = action.newAscName;
                                 break;
                         }
-                        this.toggleNode(action.node, null, true);
+                        // this.toggleNode(action.node, null, true);
                     }
-                    else if (typeof action === 'number') {
+                    else if (typeof action === 'number' || typeof action === 'string') {
                         this.toggleNode(action, null, true);
                     }
                     else throw new Error(`Bad action (${action}) in handleRedo`);

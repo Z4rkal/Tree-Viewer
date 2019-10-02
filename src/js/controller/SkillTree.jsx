@@ -62,7 +62,6 @@ class SkillTree extends Component {
         this.handleNodeClick = this.handleNodeClick.bind(this);
         this.finishedLoadingAssets = this.finishedLoadingAssets.bind(this);
         this.resetTree = this.resetTree.bind(this);
-        this.setCharacter = this.setCharacter.bind(this);
         this.setAscClass = this.setAscClass.bind(this);
         this.toggleNode = this.toggleNode.bind(this);
         this.findPathToNode = this.findPathToNode.bind(this);
@@ -101,7 +100,7 @@ class SkillTree extends Component {
         const loadedTreeState = decodeTreeUrl(base64Str);
         const { startingClass, ascId, nodes: loadedNodes } = loadedTreeState;
 
-        this.beginNextAction(() => this.setCharacter(Object.values(startingNodes).find((node) => node.id === startingClass).id, () => this.setAscClass(ascId, () => loadedNodes.map((nodeId) => this.toggleNode(nodeId)))));
+        this.beginNextAction(() => this.resetTree(Object.values(startingNodes).find((node) => node.id === startingClass).id, () => this.setAscClass(ascId, () => loadedNodes.map((nodeId) => this.toggleNode(nodeId)))));
     }
 
     handleEncode() {
@@ -452,20 +451,7 @@ class SkillTree extends Component {
             if (keystone[`z${i}`].h > tallest) tallest = keystone[`z${i}`].h;
         }
 
-        if (cb === undefined) cb = () => {
-            if (initialActiveClass === undefined) {
-                console.log('Undefined Initial Active Class');
-                try {
-                    initialActiveClass = 0;//Object.values(startingNodes).find((node) => node.id === 0).id;
-                    //Object.values(ourNodes).find((node) => node.spc.length !== 0 && node.spc[0] === 0).id;
-                }
-                catch (error) {
-                    throw new Error(`Something is pretty wrong, couldn't find an initial starting node to activate`);
-                }
-            }
-
-            this.setCharacter(0);//initialActiveClass);
-        };
+        if (cb === undefined) cb = () => this.resetTree(0);
 
         this.setState(() => {
             return {
@@ -693,12 +679,55 @@ class SkillTree extends Component {
         }, cb);
     }
 
-    resetTree(cb) {
+    resetTree(classId, cb) {
         this.setState((state) => {
+            if (typeof classId !== 'number') {
+                classId = parseInt(classId);
+            }
+
             let nodes = { ...state.nodes };
 
-            Object.keys(state.nodes).map((nodeId) => {
-                nodes[nodeId] = { ...state.nodes[nodeId], active: !state.nodes[nodeId].m ? false : null, canTake: 0 }
+            const targetStartingNode = Object.values(state.startingNodes).find((node) => node.id === classId);
+            if (!targetStartingNode) throw new Error(`Tried to set character using invalid class Id: ${classId}`);
+            const targetNode = nodes[targetStartingNode.nodeId];
+
+            const currentAction = state.treeActions[0] ? [...(state.treeActions[0])] : [];
+            Object.values(nodes).map((node) => {
+                const nodeId = node.id;
+
+                if (node.active && nodeId !== targetNode.id) {
+                    nodes[nodeId] = { ...nodes[nodeId], active: false };
+
+                    for (let i = 0; i < node.adjacent.length; i++) {
+                        const outNode = nodes[node.adjacent[i]];
+
+                        if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
+                        if (outNode.canTake - 1 < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(\nNode: ${node}\nOut Node: ${JSON.stringify(outNode)}`);
+
+                        nodes[outNode.id] = { ...nodes[outNode.id], canTake: nodes[outNode.id].canTake - 1 };
+                    }
+
+                    if (state.startingNodes[nodeId]) {
+                        currentAction.push({ changeType: 'prev-class', node: nodeId, classId: state.startingNodes[nodeId].id, class: state.startingNodes[nodeId].class });
+                    }
+                    else if (node.isAscendancyStart) {
+                        currentAction.push({ changeType: 'asc-change', node: nodeId, prevAscId: state.ascStartingNodes[nodeId].ascId, prevAscName: node.ascendancyName, newAscId: 0, newAscName: '' });
+                    }
+                    else currentAction.push(nodeId);
+                }
+                else if (nodeId === targetNode.id && !node.active) {
+                    nodes[nodeId] = { ...nodes[nodeId], active: true };
+
+                    for (let i = 0; i < node.adjacent.length; i++) {
+                        const outNode = nodes[node.adjacent[i]];
+
+                        if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
+
+                        nodes[outNode.id] = { ...nodes[outNode.id], canTake: nodes[outNode.id].canTake + 1 };
+                    }
+
+                    currentAction.push({ changeType: 'new-class', node: nodeId, classId: state.startingNodes[nodeId].id, class: state.startingNodes[nodeId].class });
+                }
             });
 
             return {
@@ -706,27 +735,12 @@ class SkillTree extends Component {
                 activeNodes: {},
                 pointsUsed: 0,
                 ascPointsUsed: 0,
-                classStartingNodeId: 0,
+                classStartingNodeId: targetNode.id,
                 ascClassId: 0,
-                ascClassname: ''
+                ascClassname: '',
+                treeActions: [currentAction, ...state.treeActions.slice(1)]
             }
         }, cb);
-    }
-
-    setCharacter(classId, cb) {
-        const { nodes, startingNodes } = this.state;
-
-        if (typeof classId !== 'number') {
-            classId = parseInt(classId);
-        }
-
-        const nodeId = Object.values(startingNodes).find((node) => node.id === classId).nodeId;
-        const node = nodes[nodeId];
-
-        if (node) {
-            this.resetTree(() => this.setState(() => { return { classStartingNodeId: nodeId, ascClassId: 0 } }, () => this.toggleNode(nodeId, cb)));
-        }
-        else throw new Error(`Tried to set character using invalid node: ${nodeId}`);
     }
 
     setAscClass(ascId, cb) {
@@ -864,7 +878,7 @@ class SkillTree extends Component {
         if (typeof cb === 'function') { //Use the callback for each node on the hanging parts of the tree
             Object.keys(activeNodes).map((nodeId) => {
                 if (!visited[nodeId] && !nodes[nodeId].isBlighted) {
-                    cb(nodeId);
+                    cb(parseInt(nodeId));
                 }
             });
         };
@@ -911,11 +925,35 @@ class SkillTree extends Component {
 
             if (treeActionIndex + 1 < treeActions.length) {
                 const currentAction = [...treeActions[treeActionIndex]];
-                currentAction.map((nodeId) => {
-                    this.toggleNode(nodeId, null, true);
+                let { classStartingNodeId, ascClassId, ascClassname } = state;
+
+                currentAction.map((action) => {
+                    if (typeof action === 'object') {
+                        switch (action.changeType) {
+                            case 'prev-class':
+                                classStartingNodeId = action.node;
+                                break;
+                            case 'new-class':
+                                break;
+                            case 'asc-change':
+                                ascClassId = action.prevAscId;
+                                ascClassname = action.prevAscName;
+                                break;
+                        }
+                        this.toggleNode(action.node, null, true);
+                    }
+                    else if (typeof action === 'number') {
+                        this.toggleNode(action, null, true);
+                    }
+                    else throw new Error(`Bad action (${action}, type: ${typeof action}) in handleUndo`);
                 });
 
-                return { treeActionIndex: state.treeActionIndex + 1 }
+                return {
+                    classStartingNodeId,
+                    ascClassId,
+                    ascClassname,
+                    treeActionIndex: state.treeActionIndex + 1
+                }
             }
 
             return null;
@@ -928,11 +966,35 @@ class SkillTree extends Component {
 
             if (treeActionIndex - 1 >= 0) {
                 const currentAction = [...treeActions[treeActionIndex - 1]];
-                currentAction.map((nodeId) => {
-                    this.toggleNode(nodeId, null, true);
+                let { classStartingNodeId, ascClassId, ascClassname } = state;
+
+                currentAction.map((action) => {
+                    if (typeof action === 'object') {
+                        switch (action.changeType) {
+                            case 'prev-class':
+                                break;
+                            case 'new-class':
+                                classStartingNodeId = action.node;
+                                break;
+                            case 'asc-change':
+                                ascClassId = action.newAscId;
+                                ascClassname = action.newAscName;
+                                break;
+                        }
+                        this.toggleNode(action.node, null, true);
+                    }
+                    else if (typeof action === 'number') {
+                        this.toggleNode(action, null, true);
+                    }
+                    else throw new Error(`Bad action (${action}) in handleRedo`);
                 });
 
-                return { treeActionIndex: state.treeActionIndex - 1 }
+                return {
+                    classStartingNodeId,
+                    ascClassId,
+                    ascClassname,
+                    treeActionIndex: state.treeActionIndex - 1
+                }
             }
 
             return null;
@@ -950,7 +1012,7 @@ class SkillTree extends Component {
                     <ImageSource finishedLoadingAssets={this.finishedLoadingAssets} />
                     <div id='upper-tree-space' className='tree-row'>
                         <PreCanvasContent startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} ascClassId={ascClassId} classStartingNodeId={classStartingNodeId} pointsUsed={pointsUsed} ascPointsUsed={ascPointsUsed} loaded={loaded}
-                            beginNextAction={this.beginNextAction} setCharacter={this.setCharacter} setAscClass={this.setAscClass} />
+                            beginNextAction={this.beginNextAction} resetTree={this.resetTree} setAscClass={this.setAscClass} />
                     </div>
                     <div id='tree-canvas-container' className='tree-row' style={{ width: `${CAN_WIDTH}px`, height: `${CAN_HEIGHT}px` }}>
                         <TreeBase CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}

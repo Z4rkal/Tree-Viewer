@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 class PreCanvasContent extends Component {
     render() {
         const { startingNodes, ascStartingNodes, classStartingNodeId, ascClassId, pointsUsed, ascPointsUsed, loaded } = this.props;
-        const { beginNextAction, setCharacter, setAscClass } = this.props;
+        const { beginNextAction, resetTree, setAscClass } = this.props;
 
         if (!loaded || classStartingNodeId === 0)
             return (
@@ -22,7 +22,7 @@ class PreCanvasContent extends Component {
                     <p id='asc-points'>{`${ascPointsUsed} / ${maxAscPoints}`}</p>
                 </div>
                 <div id='class-selector' className='canvas-info-container'>
-                    <select value={characterClass.id} onChange={(e) => { const value = e.target.value; beginNextAction(() => setCharacter(parseInt(value))); }}>
+                    <select value={characterClass.id} onChange={(e) => { const value = e.target.value; beginNextAction(() => resetTree(parseInt(value))); }}>
                         {Object.values(startingNodes).map((node) => (
                             <option key={node.class} value={node.id}>{node.class}</option>
                         ))}

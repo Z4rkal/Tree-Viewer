@@ -47,7 +47,9 @@ class SkillTree extends Component {
             canClick: false,
             latestCursorX: 0,
             latestCursorY: 0,
-            loaded: false
+            loaded: false,
+            treeActionIndex: 0,
+            treeActions: []
         };
 
         this.handleDecode = this.handleDecode.bind(this);
@@ -65,6 +67,10 @@ class SkillTree extends Component {
         this.toggleNode = this.toggleNode.bind(this);
         this.findPathToNode = this.findPathToNode.bind(this);
         this.findHangingNodes = this.findHangingNodes.bind(this);
+        this.beginNextAction = this.beginNextAction.bind(this);
+        this.keyEventHandler = this.keyEventHandler.bind(this);
+        this.handleUndo = this.handleUndo.bind(this);
+        this.handleRedo = this.handleRedo.bind(this);
     }
 
     componentDidMount() {
@@ -81,6 +87,12 @@ class SkillTree extends Component {
         if (true) { //Need to check whether the user wants cookies, but for now it's just me so I'll figure it out later
             window.onbeforeunload = () => { if (this.state.loaded) Cookies.set('last-session-tree', this.handleEncode()); };
         }
+
+        document.addEventListener('keydown', this.keyEventHandler);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('keydown', this.keyEventHandler);
     }
 
     handleDecode(base64Str) {
@@ -89,7 +101,7 @@ class SkillTree extends Component {
         const loadedTreeState = decodeTreeUrl(base64Str);
         const { startingClass, ascId, nodes: loadedNodes } = loadedTreeState;
 
-        this.setCharacter(Object.values(startingNodes).find((node) => node.id === startingClass).id, () => this.setAscClass(ascId, () => loadedNodes.map((nodeId) => this.toggleNode(nodeId))));
+        this.beginNextAction(() => this.setCharacter(Object.values(startingNodes).find((node) => node.id === startingClass).id, () => this.setAscClass(ascId, () => loadedNodes.map((nodeId) => this.toggleNode(nodeId)))));
     }
 
     handleEncode() {
@@ -604,22 +616,22 @@ class SkillTree extends Component {
         if (node && node.spc.length === 0 && !node.isAscendancyStart) {
 
             if (node.canTake === 1 || node.isBlighted) {
-                this.toggleNode(node.id);
+                this.beginNextAction(() => this.toggleNode(node.id));
             }
             else if (node.canTake > 1) {
                 //TODO: determine whether removing a node with more than one adjacent active node will break the tree
                 //If it will, then remove the hanging nodes
-                if (node.active) this.toggleNode(node.id, () => this.findHangingNodes(this.toggleNode));
-                else this.toggleNode(node.id);
+                if (node.active) this.beginNextAction(() => this.toggleNode(node.id, () => this.findHangingNodes(this.toggleNode)));
+                else this.beginNextAction(() => this.toggleNode(node.id));
             }
             else {
                 //Node canTake is 0, so take every node along the shortest path to the node
-                this.findPathToNode(node.id, this.toggleNode);
+                this.beginNextAction(() => this.findPathToNode(node.id, this.toggleNode));
             }
         }
     }
 
-    toggleNode(nodeId, cb) {
+    toggleNode(nodeId, cb, notAction) {
         this.setState((state) => {
             const node = state.nodes[nodeId];
             if (!node) throw new Error(`Invalid Node Id: ${nodeId}`);
@@ -659,11 +671,24 @@ class SkillTree extends Component {
                 }
             }
 
+            if (notAction) {
+                return {
+                    nodes,
+                    activeNodes,
+                    pointsUsed,
+                    ascPointsUsed
+                }
+            }
+
+            const currentAction = state.treeActions[0] ? [...(state.treeActions[0])] : [];
+            currentAction.push(nodeId);
+
             return {
                 nodes,
                 activeNodes,
                 pointsUsed,
-                ascPointsUsed
+                ascPointsUsed,
+                treeActions: [currentAction, ...state.treeActions.slice(1)]
             }
         }, cb);
     }
@@ -845,6 +870,75 @@ class SkillTree extends Component {
         };
     }
 
+    beginNextAction(cb) {
+        this.setState((state) => {
+            const { treeActions, treeActionIndex } = state;
+
+            if (treeActionIndex !== 0) {
+                return {
+                    treeActions: [[], ...treeActions.slice(treeActionIndex)],
+                    treeActionIndex: 0
+                }
+            }
+
+            if (treeActions.length >= 20) {
+                return {
+                    treeActions: [[], ...treeActions.slice(0, treeActions.length - 1)]
+                }
+            }
+
+            return {
+                treeActions: [[], ...treeActions]
+            }
+        }, cb);
+    }
+
+    keyEventHandler(event) {
+        if (event.target.localName !== 'input' && event.key === 'z' && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            this.handleUndo();
+        }
+        else if (event.target.localName !== 'input' && event.key === 'Z' && event.shiftKey && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            this.handleRedo();
+        }
+    }
+
+
+    handleUndo() {
+        this.setState((state) => {
+            const { treeActions, treeActionIndex } = state;
+
+            if (treeActionIndex + 1 < treeActions.length) {
+                const currentAction = [...treeActions[treeActionIndex]];
+                currentAction.map((nodeId) => {
+                    this.toggleNode(nodeId, null, true);
+                });
+
+                return { treeActionIndex: state.treeActionIndex + 1 }
+            }
+
+            return null;
+        });
+    }
+
+    handleRedo() {
+        this.setState((state) => {
+            const { treeActions, treeActionIndex } = state;
+
+            if (treeActionIndex - 1 >= 0) {
+                const currentAction = [...treeActions[treeActionIndex - 1]];
+                currentAction.map((nodeId) => {
+                    this.toggleNode(nodeId, null, true);
+                });
+
+                return { treeActionIndex: state.treeActionIndex - 1 }
+            }
+
+            return null;
+        });
+    }
+
     render() {
         const { groups, nodes, startingNodes, ascStartingNodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
@@ -856,7 +950,7 @@ class SkillTree extends Component {
                     <ImageSource finishedLoadingAssets={this.finishedLoadingAssets} />
                     <div id='upper-tree-space' className='tree-row'>
                         <PreCanvasContent startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} ascClassId={ascClassId} classStartingNodeId={classStartingNodeId} pointsUsed={pointsUsed} ascPointsUsed={ascPointsUsed} loaded={loaded}
-                            setCharacter={this.setCharacter} setAscClass={this.setAscClass} />
+                            beginNextAction={this.beginNextAction} setCharacter={this.setCharacter} setAscClass={this.setAscClass} />
                     </div>
                     <div id='tree-canvas-container' className='tree-row' style={{ width: `${CAN_WIDTH}px`, height: `${CAN_HEIGHT}px` }}>
                         <TreeBase CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
@@ -919,7 +1013,7 @@ export default SkillTree;
 
     Expand the hitboxes around nodes to be the size of their frame, they feel way too small right now
 
-    Add undo/redo?
+    *DONE* Add undo/redo? -> Might want to move away from nested setState calls, but from my current testing it seems to work fine and just spook react
         -Shouldn't be too hard to do, just build an array with nodes that were toggled since the last action
 
     Make sure that a broken cookie can't dismantle everything and stop the app from working

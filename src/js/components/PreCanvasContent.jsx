@@ -7,7 +7,14 @@ class PreCanvasContent extends Component {
 
         if (!loaded || classStartingNodeId === 0)
             return (
-                <div></div>
+                <>
+                    <div id='level-container' className='canvas-info-container'>
+                    </div>
+                    <div id='class-selector' className='canvas-info-container'>
+                    </div>
+                    <div id='asc-class-selector' className='canvas-info-container'>
+                    </div>
+                </>
             )
 
         const characterClass = startingNodes[classStartingNodeId];

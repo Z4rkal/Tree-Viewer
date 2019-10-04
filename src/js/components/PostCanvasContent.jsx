@@ -83,9 +83,15 @@ class PostCanvasContent extends Component {
 
         if (!loaded)
             return (
-                <div></div>
+                <>
+                    <div id='import-url-container' className='canvas-info-container'>
+                    </div>
+                    <div id='export-button-container' className='canvas-info-container'>
+                    </div>
+                </>
             )
 
+        //Should dynamically size export popout based on the size of the string, rather than doing it in the stylesheet
         return (
             <>
                 <div id='import-url-container' className='canvas-info-container'>
@@ -108,3 +114,5 @@ export default PostCanvasContent;
 
 //Exported Tree String, I'll leave it here for now for safekeeping while I'm breaking stuff
 //AAAABAMDAAQHBLMI9AksEFERLRUnFm8aHRo4HNwdFB4IHtoi9CSaJKonLyj6KpgsnC0fMtE1kjbpOlg6xjrhOulBh0VHRZ1G_keFSp9Ms025TeNTUlXGVi5Z818qYvRjQWZUZp5ncWobakNr22wLbRlxsnHzcg9yxXl_fIOCx4PbhTKFYIhAibyLZYt2jLGOvo8aj0aQM5BVksGUb5UgmuCbipuhoOaiAKZXpqynCKflqqmqxK1IrvS3PriTvOq-Sb5Pv5fAZsHzxorJPcy80B_SKtOP2L3fsODd42rr5Ovu7IPsiuzo7-vwH_Ie8kX56PrS_gr-gf6P_rM=
+
+//AAAABAMDAASzCPQJLBBREQ8VJxZvGh0aOBzcHRQeCB7aIvQkmiSqJy8o-iqYLR8y0TWSNuk6WDrGOuE66TsNOz9Bh0VHRZ1G_keFSp9Ms025TeNTUlSuVcZWLlnzXyphKGL0Y0FmVGaeZ3FqG2pDa9tsC20ZcbJx83IPcsV0VXl_fIN9GH3SgseD24UyhWCGyohAibyLZYt2jLGPGo9GkDOQVZRvlSCa4JuKm6Gg5qIAplemrKcIp-WqqarErJitSK70tz64k7zqvkm-T7-XwGbB88aKyT3MvNAf0irTj9i934rg3eNq6-7sg-zo7-vwH_Ie8kX31_no-tL-Cv6B_o_-sw==

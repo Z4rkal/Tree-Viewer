@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 
 import { passiveSkillTreeData } from '../../data/Tree';
 const { skillSprites, imageZoomLevels } = passiveSkillTreeData;
-const { min_x, max_x, min_y, max_y } = passiveSkillTreeData
+const { min_x, max_x, min_y, max_y } = passiveSkillTreeData;
 
 class TreeBase extends Component {
     constructor() {
@@ -18,6 +18,7 @@ class TreeBase extends Component {
     //Strength/Dex/Int Fill colors;
     //"rgb(235,46,16)";"rgb(1,217,1)";"rgb(88,130,255)";
     updateCanvas() {
+        const { CAN_WIDTH, CAN_HEIGHT } = this.props;
         const canvas = this.canvasRef.current;
         const ctx = canvas.getContext('2d');
 
@@ -34,7 +35,7 @@ class TreeBase extends Component {
 
             let textLength = ctx.measureText(loadingMessage);
 
-            ctx.fillText(loadingMessage, 916 / 2 - (textLength.width / 2), 767 / 2);
+            ctx.fillText(loadingMessage, CAN_WIDTH / 2 - (textLength.width / 2), CAN_HEIGHT / 2);
             ctx.restore();
             return 0;
         }
@@ -43,16 +44,18 @@ class TreeBase extends Component {
 
         //Redraw whole tree, later I'd like to only redraw the specific things that change if the state change
         //is something like a node being taken or the search bar updating
-        ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale, 767 / 2 + canY * scale);
-        ctx.clearRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), Math.round(916 / scale), Math.round(767 / scale));
+        ctx.setTransform(scale, 0, 0, scale, CAN_WIDTH / 2 + canX * scale, CAN_HEIGHT / 2 + canY * scale);
+        ctx.clearRect(-(CAN_WIDTH / (2 * scale) + canX), -(CAN_HEIGHT / (2 * scale) + canY), Math.round(CAN_WIDTH / scale), Math.round(CAN_HEIGHT / scale));
         this.drawTreeStructure();
         this.drawBackGround();
     }
 
     drawTreeStructure() {
+        const { CAN_WIDTH, CAN_HEIGHT } = this.props;
         const { groups, nodes } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
+        const { keystone } = this.props.sizeConstants;
         const scaleAtCurrentZoomLevel = imageZoomLevels[zoomLvl];
 
         if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
@@ -60,171 +63,220 @@ class TreeBase extends Component {
             const ctx = canvas.getContext('2d');
 
             Object.values(groups).map((group, groupIndex) => {
-                group.n.map((nodeId, nodeIndex) => {
-                    if (nodes[nodeId]) {
-                        const node = nodes[nodeId];
-                        const { icon, srcRoot, nX, nY } = node;
-                        const { nodeType, active, canTake } = node;
-                        const { arcs, paths } = node;
-                        //const coords  = node.coords[`z${zoomLvl}`];
+                //Determine whether group is visible
+                const x0 = group.min_x + canX;
+                const x1 = group.max_x + canX;
+                const y0 = group.min_y + canY;
+                const y1 = group.max_y + canY;
 
-                        const spriteType = active !== null ? nodeType + (active ? 'Active' : 'Inactive') : nodeType;
-                        const srcId = srcRoot + (active === null || active ? '' : 'disabled-') + `${zoomLvl}`;
+                const keystoneRadius = keystone[`z${zoomLvl}`].r;
 
-                        const imgData = skillSprites[spriteType][zoomLvl];
-                        const coords = imgData.coords[icon];
+                if (
+                    (Math.abs(x0 - keystoneRadius) <= (CAN_WIDTH) / (2 * scale)
+                        || Math.abs(x0 + keystoneRadius) <= (CAN_WIDTH) / (2 * scale)
+                        || Math.abs(x1 - keystoneRadius) <= (CAN_WIDTH) / (2 * scale)
+                        || Math.abs(x1 + keystoneRadius) <= (CAN_WIDTH) / (2 * scale))
+                    && (Math.abs(y0 - keystoneRadius) <= (CAN_HEIGHT) / (2 * scale)
+                        || Math.abs(y0 + keystoneRadius) <= (CAN_HEIGHT) / (2 * scale)
+                        || Math.abs(y1 - keystoneRadius) <= (CAN_HEIGHT) / (2 * scale)
+                        || Math.abs(y1 + keystoneRadius) <= (CAN_HEIGHT) / (2 * scale))
+                ) {
+                    group.n.map((nodeId, nodeIndex) => {
+                        if (nodes[nodeId]) {
+                            const node = nodes[nodeId];
+                            const { icon, srcRoot, nX, nY } = node;
+                            const { nodeType, active, canTake } = node;
+                            const { arcs, paths } = node;
 
-                        const src = document.getElementById(`${srcId}`);
+                            const spriteType = active !== null ? nodeType + (active ? 'Active' : 'Inactive') : nodeType;
+                            const srcId = srcRoot + (active === null || active ? '' : 'disabled-') + `${zoomLvl}`;
 
-                        let destWidth = Math.round(coords.w / scaleAtCurrentZoomLevel);
-                        let destHeight = Math.round(coords.h / scaleAtCurrentZoomLevel);
+                            const imgData = skillSprites[spriteType][zoomLvl];
+                            const coords = imgData.coords[icon];
 
-                        if (node.spc.length === 0) {
-                            if (!node.isAscendancyStart)
-                                ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, nX - (destWidth / 2), nY - (destHeight / 2), destWidth, destHeight);
+                            const src = document.getElementById(`${srcId}`);
 
-                            if (!node.ascendancyName) {
-                                let frameId, frameSrc;
-                                let frameWidth, frameHeight;
-                                if (nodeType === 'normal' && !node.isJewelSocket) {
-                                    frameId = `PSSkillFrame${active ? `Active` : canTake ? `Highlighted` : ``}-${zoomLvl}`
-                                    frameSrc = document.getElementById(`${frameId}`)
+                            let destWidth = Math.round(coords.w / scaleAtCurrentZoomLevel);
+                            let destHeight = Math.round(coords.h / scaleAtCurrentZoomLevel);
 
-                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
-                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+                            if (node.spc.length === 0) {
+                                if (!node.isAscendancyStart)
+                                    ctx.drawImage(src, coords.x, coords.y, coords.w, coords.h, nX - (destWidth / 2), nY - (destHeight / 2), destWidth, destHeight);
 
-                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                if (!node.ascendancyName) {
+                                    let frameId, frameSrc;
+                                    let frameWidth, frameHeight;
+                                    if (nodeType === 'normal' && !node.isJewelSocket) {
+                                        frameId = `PSSkillFrame${active ? `Active` : canTake ? `Highlighted` : ``}-${zoomLvl}`
+                                        frameSrc = document.getElementById(`${frameId}`)
+
+                                        frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                        frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+
+                                        ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                    }
+                                    else if (nodeType === 'notable') {
+                                        frameId = `${node.isBlighted ? `Blighted` : ``}NotableFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
+                                        frameSrc = document.getElementById(`${frameId}`)
+
+                                        frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                        frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+
+                                        ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                    }
+                                    else if (nodeType === 'keystone') {
+                                        frameId = `KeystoneFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
+                                        frameSrc = document.getElementById(`${frameId}`)
+
+                                        frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                        frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+
+                                        ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                    }
+                                    else if (node.isJewelSocket) {
+                                        frameId = `JewelFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
+                                        frameSrc = document.getElementById(`${frameId}`)
+
+                                        frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
+                                        frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+
+                                        ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                    }
                                 }
-                                else if (nodeType === 'notable') {
-                                    frameId = `${node.isBlighted ? `Blighted` : ``}NotableFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
-                                    frameSrc = document.getElementById(`${frameId}`)
+                                else {
+                                    if (node.isAscendancyStart) {
+                                        const ascStartId = `PassiveSkillScreenAscendancyMiddle-${zoomLvl}`;
+                                        const ascStartSrc = document.getElementById(`${ascStartId}`);
 
-                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
-                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+                                        const ascStartWidth = Math.round(ascStartSrc.width / scaleAtCurrentZoomLevel);
+                                        const ascStartHeight = Math.round(ascStartSrc.height / scaleAtCurrentZoomLevel);
 
-                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
-                                }
-                                else if (nodeType === 'keystone') {
-                                    frameId = `KeystoneFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
-                                    frameSrc = document.getElementById(`${frameId}`)
+                                        ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
+                                    }
+                                    else if (nodeType === 'normal') {
+                                        const ascSmallId = `PassiveSkillScreenAscendancyFrameSmall${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
+                                        const ascSmallSrc = document.getElementById(`${ascSmallId}`);
 
-                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
-                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+                                        const ascSmallWidth = Math.round(ascSmallSrc.width / scaleAtCurrentZoomLevel);
+                                        const ascSmallHeight = Math.round(ascSmallSrc.height / scaleAtCurrentZoomLevel);
 
-                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
-                                }
-                                else if (node.isJewelSocket) {
-                                    frameId = `JewelFrame${active ? `Allocated` : canTake ? `CanAllocate` : `Unallocated`}-${zoomLvl}`
-                                    frameSrc = document.getElementById(`${frameId}`)
+                                        ctx.drawImage(ascSmallSrc, nX - (ascSmallWidth / 2), nY - (ascSmallHeight / 2), ascSmallWidth, ascSmallHeight);
+                                    }
+                                    else if (nodeType === 'notable') {
+                                        const ascStartId = `PassiveSkillScreenAscendancyFrameLarge${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
+                                        const ascStartSrc = document.getElementById(`${ascStartId}`);
 
-                                    frameWidth = Math.round(frameSrc.width / scaleAtCurrentZoomLevel);
-                                    frameHeight = Math.round(frameSrc.height / scaleAtCurrentZoomLevel);
+                                        const ascStartWidth = Math.round(ascStartSrc.width / scaleAtCurrentZoomLevel);
+                                        const ascStartHeight = Math.round(ascStartSrc.height / scaleAtCurrentZoomLevel);
 
-                                    ctx.drawImage(frameSrc, nX - (frameWidth / 2), nY - (frameHeight / 2), frameWidth, frameHeight);
+                                        ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
+                                    }
                                 }
                             }
-                            else {
-                                if (node.isAscendancyStart) {
-                                    const ascStartId = `PassiveSkillScreenAscendancyMiddle-${zoomLvl}`;
-                                    const ascStartSrc = document.getElementById(`${ascStartId}`);
 
-                                    const ascStartWidth = Math.round(ascStartSrc.width / scaleAtCurrentZoomLevel);
-                                    const ascStartHeight = Math.round(ascStartSrc.height / scaleAtCurrentZoomLevel);
-
-                                    ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
-                                }
-                                else if (nodeType === 'normal') {
-                                    const ascSmallId = `PassiveSkillScreenAscendancyFrameSmall${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
-                                    const ascSmallSrc = document.getElementById(`${ascSmallId}`);
-
-                                    const ascSmallWidth = Math.round(ascSmallSrc.width / scaleAtCurrentZoomLevel);
-                                    const ascSmallHeight = Math.round(ascSmallSrc.height / scaleAtCurrentZoomLevel);
-
-                                    ctx.drawImage(ascSmallSrc, nX - (ascSmallWidth / 2), nY - (ascSmallHeight / 2), ascSmallWidth, ascSmallHeight);
-                                }
-                                else if (nodeType === 'notable') {
-                                    const ascStartId = `PassiveSkillScreenAscendancyFrameLarge${active ? `Allocated` : canTake ? `CanAllocate` : `Normal`}-${zoomLvl}`;
-                                    const ascStartSrc = document.getElementById(`${ascStartId}`);
-
-                                    const ascStartWidth = Math.round(ascStartSrc.width / scaleAtCurrentZoomLevel);
-                                    const ascStartHeight = Math.round(ascStartSrc.height / scaleAtCurrentZoomLevel);
-
-                                    ctx.drawImage(ascStartSrc, nX - (ascStartWidth / 2), nY - (ascStartHeight / 2), ascStartWidth, ascStartHeight);
-                                }
-                            }
-                        }
-
-                        arcs.map((arc) => {
-                            ctx.save();
                             ctx.globalCompositeOperation = 'destination-over';
-                            // ctx.lineWidth = 8;
-                            // ctx.fillStyle = "rgba(200,0,0,.5)";
-                            // ctx.strokeStyle = "rgba(150,150,0,.8)";
+                            arcs.map((arc) => {
+                                ctx.save();
+                                const { orbit, radius, x, y, ø, øBetween, startId, outId, gt90 } = arc;
 
-                            const { orbit, radius, x, y, ø, øBetween, startId, outId, gt90 } = arc;
+                                const arcId = `Orbit${orbit}${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
+                                const arcSrc = document.getElementById(`${arcId}`);
 
-                            const arcId = `Orbit${orbit}${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
-                            const arcSrc = document.getElementById(`${arcId}`);
+                                const arcWidth = Math.round(arcSrc.width / scaleAtCurrentZoomLevel);
+                                const arcHeight = Math.round(arcSrc.height / scaleAtCurrentZoomLevel);
 
-                            const arcWidth = Math.round(arcSrc.width / scaleAtCurrentZoomLevel);
-                            const arcHeight = Math.round(arcSrc.height / scaleAtCurrentZoomLevel);
+                                const offY = nodes[startId].active && nodes[outId].active ? 10 / imageZoomLevels[3] : 3 / imageZoomLevels[3];
 
-                            const offY = nodes[startId].active && nodes[outId].active ? 10 / imageZoomLevels[3] : 3 / imageZoomLevels[3];
+                                ctx.translate(x, y);
+                                ctx.rotate(ø + (Math.PI / 2));
+                                ctx.beginPath();
+                                ctx.moveTo(0, radius);
+                                ctx.lineTo(0, 0);
+                                ctx.arc(0, radius, radius + offY + 1, -(Math.PI / 2), -(Math.PI / 2) - øBetween, true);
+                                ctx.clip();
+                                ctx.drawImage(arcSrc, -arcWidth, -offY, arcWidth, arcHeight);
 
-                            ctx.translate(x, y);
-                            ctx.rotate(ø + (Math.PI / 2));
-                            ctx.beginPath();
-                            ctx.moveTo(0, radius);
-                            ctx.lineTo(0, 0);
-                            ctx.arc(0, radius, radius + offY + 1, -(Math.PI / 2), -(Math.PI / 2) - øBetween, true);
-                            ctx.clip();
-                            ctx.drawImage(arcSrc, -arcWidth, -offY, arcWidth, arcHeight);
+                                if (gt90) { //Draw part of another arc if ø is greater than 90 degrees
+                                    ctx.translate(-arcWidth, arcHeight);
+                                    ctx.rotate(-(Math.PI / 2));
+                                    ctx.drawImage(arcSrc, -(arcWidth - offY - 1), 0, arcWidth, arcHeight);
+                                }
 
-                            if (gt90) { //Draw part of another arc if ø is greater than 90 degrees
-                                ctx.translate(-arcWidth, arcHeight);
-                                ctx.rotate(-(Math.PI / 2));
-                                ctx.drawImage(arcSrc, -(arcWidth - offY - 1), 0, arcWidth, arcHeight);
-                            }
+                                ctx.restore();
+                            });
 
-                            ctx.restore();
-                        });
+                            paths.map((path) => {
+                                const { x1, y1, w, ø, startId, outId } = path;
 
-                        paths.map((path) => {
-                            ctx.globalCompositeOperation = 'destination-over';
+                                const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
+                                const lineSrc = document.getElementById(`${lineId}`);
 
-                            const { x1, y1, w, ø, startId, outId } = path;
+                                if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
 
-                            const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
-                            const lineSrc = document.getElementById(`${lineId}`);
+                                const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
 
-                            if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
+                                const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
+                                const decoSrc = document.getElementById(`${decoId}`);
 
-                            const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
+                                const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
+                                const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
 
-                            const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
-                            const decoSrc = document.getElementById(`${decoId}`);
+                                ctx.translate(x1, y1);
+                                ctx.rotate(ø);
+                                ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                                ctx.scale(-1, 1);
+                                ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                                ctx.scale(-1, 1);
+                                ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
+                                ctx.rotate(-ø);
+                                ctx.translate(-x1, -y1);
+                            });
 
-                            const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
-                            const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
+                            node.adjacent.map((adjNodeId) => { //Probably not the solution, might need to have paths outside of the nodes
+                                const outNode = nodes[adjNodeId];
+                                if (outNode.g !== node.g) {
+                                    outNode.paths.map((path) => {
+                                        const { outId } = path;
 
-                            ctx.translate(x1, y1);
-                            ctx.rotate(ø);
-                            ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                            ctx.scale(-1, 1);
-                            ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                            ctx.scale(-1, 1);
-                            ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
-                            ctx.rotate(-ø);
-                            ctx.translate(-x1, -y1);
+                                        if (outId === node.id) {
+                                            const { x1, y1, w, ø, startId } = path;
+
+                                            const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
+                                            const lineSrc = document.getElementById(`${lineId}`);
+
+                                            if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
+
+                                            const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
+
+                                            const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
+                                            const decoSrc = document.getElementById(`${decoId}`);
+
+                                            const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
+                                            const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
+
+                                            ctx.translate(x1, y1);
+                                            ctx.rotate(ø);
+                                            ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                                            ctx.scale(-1, 1);
+                                            ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                                            ctx.scale(-1, 1);
+                                            ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
+                                            ctx.rotate(-ø);
+                                            ctx.translate(-x1, -y1);
+                                        }
+                                    })
+                                }
+                            });
                             ctx.globalCompositeOperation = 'source-over';
-                        });
-                    }
-                });
+                        }
+                    });
+                }
             });
         }
     }
 
     drawBackGround() {
+        const { CAN_WIDTH, CAN_HEIGHT } = this.props;
         const { groups, nodes, startingNodes, ascStartingNodes } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
@@ -245,8 +297,10 @@ class TreeBase extends Component {
 
                 const { nX, nY } = nodes[node.nodeId];
 
-                ctx.drawImage(plaqueSrc, nX - (plaqueWidth / 2), nY - (plaqueHeight / 2), plaqueWidth, plaqueHeight);
-
+                if ((Math.abs((nX + canX) - plaqueWidth / 2) <= (CAN_WIDTH) / (2 * scale) || Math.abs((nX + canX) + plaqueWidth / 2) <= (CAN_WIDTH) / (2 * scale))
+                    && (Math.abs((nY + canY) - plaqueHeight / 2) <= (CAN_HEIGHT) / (2 * scale) || Math.abs((nY + canY) + plaqueHeight / 2) <= (CAN_HEIGHT) / (2 * scale))) {
+                    ctx.drawImage(plaqueSrc, nX - (plaqueWidth / 2), nY - (plaqueHeight / 2), plaqueWidth, plaqueHeight);
+                }
             });
         }
 
@@ -260,8 +314,10 @@ class TreeBase extends Component {
 
                 const { nX, nY } = nodes[node.nodeId];
 
-                ctx.drawImage(ascBackgroundSrc, nX - (ascBackgroundWidth / 2), nY - (ascBackgroundHeight / 2), ascBackgroundWidth, ascBackgroundHeight);
-
+                if ((Math.abs((nX + canX) - ascBackgroundWidth / 2) <= (CAN_WIDTH) / (2 * scale) || Math.abs((nX + canX) + ascBackgroundWidth / 2) <= (CAN_WIDTH) / (2 * scale))
+                    && (Math.abs((nY + canY) - ascBackgroundHeight / 2) <= (CAN_HEIGHT) / (2 * scale) || Math.abs((nY + canY) + ascBackgroundHeight / 2) <= (CAN_HEIGHT) / (2 * scale))) {
+                    ctx.drawImage(ascBackgroundSrc, nX - (ascBackgroundWidth / 2), nY - (ascBackgroundHeight / 2), ascBackgroundWidth, ascBackgroundHeight);
+                }
             });
         }
 
@@ -272,46 +328,44 @@ class TreeBase extends Component {
                     let circleId, circleSrc;
                     let circleWidth, circleHeight;
 
-                    switch (group.circleType) {
-                        case 'small':
-                            circleId = `PSGroupBackground1-${zoomLvl}`
-                            circleSrc = document.getElementById(`${circleId}`)
+                    if (group.circleType !== 'large') {
+                        if (group.circleType === 'small') circleId = `PSGroupBackground1-${zoomLvl}`;
+                        else if (group.circleType === 'medium') circleId = `PSGroupBackground2-${zoomLvl}`;
+                        else throw new Error(`Oops, unrecognized circleType ${group.circleType} in drawBackGround`);
 
-                            circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
-                            circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
+                        circleSrc = document.getElementById(`${circleId}`)
 
+                        circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
+                        circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
+
+                        if ((Math.abs((x + canX) - circleWidth / 2) <= (CAN_WIDTH) / (2 * scale) || Math.abs((x + canX) + circleWidth / 2) <= (CAN_WIDTH) / (2 * scale))
+                            && (Math.abs((y + canY) - circleHeight / 2) <= (CAN_HEIGHT) / (2 * scale) || Math.abs((y + canY) + circleHeight / 2) <= (CAN_HEIGHT) / (2 * scale))) {
                             ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
-                            break;
-                        case 'medium':
-                            circleId = `PSGroupBackground2-${zoomLvl}`
-                            circleSrc = document.getElementById(`${circleId}`)
+                        }
+                    }
+                    else {
+                        circleId = `PSGroupBackground3-${zoomLvl}`
+                        circleSrc = document.getElementById(`${circleId}`)
 
-                            circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
-                            circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
+                        circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
+                        circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
 
-                            ctx.drawImage(circleSrc, x - (circleWidth / 2), y - (circleHeight / 2), circleWidth, circleHeight);
-                            break;
-                        case 'large':
-                            circleId = `PSGroupBackground3-${zoomLvl}`
-                            circleSrc = document.getElementById(`${circleId}`)
-
-                            circleWidth = Math.round(circleSrc.width / scaleAtCurrentZoomLevel);
-                            circleHeight = Math.round(circleSrc.height / scaleAtCurrentZoomLevel);
-
-                            //Minus full image height since it's a half circle
+                        //Minus full image height since it's a half circle
+                        if ((Math.abs((x + canX) - circleWidth / 2) <= (CAN_WIDTH) / (2 * scale) || Math.abs((x + canX) + circleWidth / 2) <= (CAN_WIDTH) / (2 * scale))
+                            && (Math.abs((y + canY) - circleHeight) <= (CAN_HEIGHT) / (2 * scale) || Math.abs((y + canY) + circleHeight) <= (CAN_HEIGHT) / (2 * scale))) {
                             ctx.drawImage(circleSrc, x - (circleWidth / 2), y - circleHeight + 2 / scaleAtCurrentZoomLevel, circleWidth, circleHeight);
                             ctx.translate(x, y);
                             ctx.rotate(Math.PI);
                             ctx.drawImage(circleSrc, 0 - (circleWidth / 2) + 1 / scaleAtCurrentZoomLevel, 0 - circleHeight + 2 / scaleAtCurrentZoomLevel, circleWidth, circleHeight);
                             ctx.rotate(-Math.PI);
                             ctx.translate(-x, -y);
-                            break;
+                        }
                     }
                 }
             });
             let fillHolder = ctx.fillStyle;
             ctx.fillStyle = ctx.createPattern(document.getElementById(`Background1-${zoomLvl}`), 'repeat');
-            ctx.fillRect(-(916 / (2 * scale) + canX), -(767 / (2 * scale) + canY), Math.round(916 / scale), Math.round(767 / scale));
+            ctx.fillRect(-(CAN_WIDTH / (2 * scale) + canX), -(CAN_HEIGHT / (2 * scale) + canY), Math.round(CAN_WIDTH / scale), Math.round(CAN_HEIGHT / scale));
             ctx.fillStyle = fillHolder;
         }
 

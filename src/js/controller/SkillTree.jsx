@@ -115,12 +115,8 @@ class SkillTree extends Component {
         let ascStartingNodes = {};
         let hitPoints = {};
 
-        let initialActiveClass;
-        let normal = false;
-        let notable = false;
-        let keystone = false;
         Object.entries(groups).map(([groupKey, group]/*,groupIndex*/) => {
-            ourGroups[groupKey] = groups[groupKey]; //Should do a deep clone probably
+            ourGroups[groupKey] = { ...groups[groupKey] };
             group.n.map((nodeId/*,nodeIndex*/) => {
                 if (nodes[nodeId]) {
 
@@ -149,7 +145,7 @@ class SkillTree extends Component {
                     }
                     */
 
-                    const node = nodes[nodeId];
+                    const node = { ...nodes[nodeId] };
                     const { icon, o, oidx } = node;
                     const { ks, not, m } = node;
                     const { out } = node;
@@ -159,56 +155,6 @@ class SkillTree extends Component {
 
                     const nodeType = m ? 'mastery' : ks ? 'keystone' : not ? 'notable' : 'normal';// + (!m ? 'Active' : '');
                     const srcRoot = (m ? 'groups-' : 'skills-');// + `${zoomLvl}`;
-
-                    //const coords = skillSprites[nodeType][zoomLvl].coords[icon];
-                    let z0, z1, z2, z3;
-                    if (!m) {
-                        z0 = { ...skillSprites[`${nodeType}Active`][0].coords[icon] };
-
-                        z1 = { ...skillSprites[`${nodeType}Active`][1].coords[icon] };
-
-                        z2 = { ...skillSprites[`${nodeType}Active`][2].coords[icon] };
-
-                        z3 = { ...skillSprites[`${nodeType}Active`][3].coords[icon] };
-                    }
-                    else {
-                        z0 = { ...skillSprites[`${nodeType}`][0].coords[icon] };
-
-                        z1 = { ...skillSprites[`${nodeType}`][1].coords[icon] };
-
-                        z2 = { ...skillSprites[`${nodeType}`][2].coords[icon] };
-
-                        z3 = { ...skillSprites[`${nodeType}`][3].coords[icon] };
-                    }
-
-                    //Get node size measurments for hit calculations
-                    if (!normal && nodeType === 'normal') {
-                        normal = {
-                            z0: { w: Math.round(z0.w / imageZoomLevels[0]), h: Math.round(z0.h / imageZoomLevels[0]) },
-                            z1: { w: Math.round(z1.w / imageZoomLevels[1]), h: Math.round(z1.h / imageZoomLevels[1]) },
-                            z2: { w: Math.round(z2.w / imageZoomLevels[2]), h: Math.round(z2.h / imageZoomLevels[2]) },
-                            z3: { w: Math.round(z3.w / imageZoomLevels[3]), h: Math.round(z3.h / imageZoomLevels[3]) }
-                        }
-                        //console.log('normal', normal);
-                    }
-                    if (!notable && nodeType === 'notable') {
-                        notable = {
-                            z0: { w: Math.round(z0.w / imageZoomLevels[0]), h: Math.round(z0.h / imageZoomLevels[0]) },
-                            z1: { w: Math.round(z1.w / imageZoomLevels[1]), h: Math.round(z1.h / imageZoomLevels[1]) },
-                            z2: { w: Math.round(z2.w / imageZoomLevels[2]), h: Math.round(z2.h / imageZoomLevels[2]) },
-                            z3: { w: Math.round(z3.w / imageZoomLevels[3]), h: Math.round(z3.h / imageZoomLevels[3]) }
-                        }
-                        //console.log('notable', notable);
-                    }
-                    if (!keystone && nodeType === 'keystone') {
-                        keystone = {
-                            z0: { w: Math.round(z0.w / imageZoomLevels[0]), h: Math.round(z0.h / imageZoomLevels[0]) },
-                            z1: { w: Math.round(z1.w / imageZoomLevels[1]), h: Math.round(z1.h / imageZoomLevels[1]) },
-                            z2: { w: Math.round(z2.w / imageZoomLevels[2]), h: Math.round(z2.h / imageZoomLevels[2]) },
-                            z3: { w: Math.round(z3.w / imageZoomLevels[3]), h: Math.round(z3.h / imageZoomLevels[3]) }
-                        }
-                        //console.log('keystone', keystone);
-                    }
 
                     const radius = orbitRadii[o];
                     const numOnOrbit = skillsPerOrbit[o];
@@ -220,6 +166,11 @@ class SkillTree extends Component {
 
                     let nX = group.x + xAdjust;
                     let nY = group.y + yAdjust;
+
+                    if (!ourGroups[groupKey].min_x || nX < ourGroups[groupKey].min_x) ourGroups[groupKey].min_x = nX;
+                    if (!ourGroups[groupKey].max_x || nX > ourGroups[groupKey].max_x) ourGroups[groupKey].max_x = nX;
+                    if (!ourGroups[groupKey].min_y || nY < ourGroups[groupKey].min_y) ourGroups[groupKey].min_y = nY;
+                    if (!ourGroups[groupKey].max_y || nY > ourGroups[groupKey].max_y) ourGroups[groupKey].max_y = nY;
 
                     let fullString = [nodeType, node.dn, node.sd.join(' ')].join(' ');
 
@@ -238,7 +189,6 @@ class SkillTree extends Component {
                     ourNodes[nodeId].nodeType = nodeType;
                     ourNodes[nodeId].nX = nX;
                     ourNodes[nodeId].nY = nY;
-                    ourNodes[nodeId].coords = [z0, z1, z2, z3];
                     ourNodes[nodeId].ø = ø;
                     ourNodes[nodeId].fullString = fullString;
                     ourNodes[nodeId].active = !m ? false : null;
@@ -347,8 +297,6 @@ class SkillTree extends Component {
                         if (ourNodes[nodeId].spc.length > 1) console.log(`Nodes can have more than one starting node apparently`);
 
                         let nodeClass = Object.entries(classes).find(([classDesignation, classNumber]) => classNumber === ourNodes[nodeId].spc[0]);
-                        //Unnecessary nowwww
-                        if (nodeClass[1] === opts.startClass) initialActiveClass = nodeId;
 
                         switch (nodeClass[0].replace(/Class$/, ``)) {
                             case 'Str':
@@ -439,6 +387,63 @@ class SkillTree extends Component {
                 ourGroups[groupKey].circleType = findLargestOrbit(group.oo);
         });
 
+        if (cb === undefined) cb = () => this.resetTree(0);
+
+        this.setState(() => {
+            return {
+                groups: ourGroups,
+                nodes: ourNodes,
+                startingNodes,
+                ascStartingNodes,
+                hitPoints
+            }
+        }, cb);
+    }
+
+    calculateSizeConstants() {
+        let z0, z1, z2, z3;
+
+        z0 = document.getElementById(`PSSkillFrame-0`);
+        z1 = document.getElementById(`PSSkillFrame-1`);
+        z2 = document.getElementById(`PSSkillFrame-2`);
+        z3 = document.getElementById(`PSSkillFrame-3`);
+
+        if (!z0 || !z1 || !z2 || !z3) throw new Error(`Tried to calculate size constants before the assets were finished loading >:(`);
+
+        const normal = {
+            z0: { w: Math.round(z0.width / imageZoomLevels[0]), h: Math.round(z0.height / imageZoomLevels[0]), r: Math.round(Math.max(z0.width, z0.height) / imageZoomLevels[0]) / 2 },
+            z1: { w: Math.round(z1.width / imageZoomLevels[1]), h: Math.round(z1.height / imageZoomLevels[1]), r: Math.round(Math.max(z1.width, z1.height) / imageZoomLevels[1]) / 2 },
+            z2: { w: Math.round(z2.width / imageZoomLevels[2]), h: Math.round(z2.height / imageZoomLevels[2]), r: Math.round(Math.max(z2.width, z2.height) / imageZoomLevels[2]) / 2 },
+            z3: { w: Math.round(z3.width / imageZoomLevels[3]), h: Math.round(z3.height / imageZoomLevels[3]), r: Math.round(Math.max(z3.width, z3.height) / imageZoomLevels[3]) / 2 }
+        }
+        console.log('normal', normal);
+
+        z0 = document.getElementById(`NotableFrameUnallocated-0`);
+        z1 = document.getElementById(`NotableFrameUnallocated-1`);
+        z2 = document.getElementById(`NotableFrameUnallocated-2`);
+        z3 = document.getElementById(`NotableFrameUnallocated-3`);
+
+        const notable = {
+            z0: { w: Math.round(z0.width / imageZoomLevels[0]), h: Math.round(z0.height / imageZoomLevels[0]), r: Math.round(Math.max(z0.width, z0.height) / imageZoomLevels[0]) / 2 },
+            z1: { w: Math.round(z1.width / imageZoomLevels[1]), h: Math.round(z1.height / imageZoomLevels[1]), r: Math.round(Math.max(z1.width, z1.height) / imageZoomLevels[1]) / 2 },
+            z2: { w: Math.round(z2.width / imageZoomLevels[2]), h: Math.round(z2.height / imageZoomLevels[2]), r: Math.round(Math.max(z2.width, z2.height) / imageZoomLevels[2]) / 2 },
+            z3: { w: Math.round(z3.width / imageZoomLevels[3]), h: Math.round(z3.height / imageZoomLevels[3]), r: Math.round(Math.max(z3.width, z3.height) / imageZoomLevels[3]) / 2 }
+        }
+        console.log('notable', notable);
+
+        z0 = document.getElementById(`KeystoneFrameUnallocated-0`);
+        z1 = document.getElementById(`KeystoneFrameUnallocated-1`);
+        z2 = document.getElementById(`KeystoneFrameUnallocated-2`);
+        z3 = document.getElementById(`KeystoneFrameUnallocated-3`);
+
+        const keystone = {
+            z0: { w: Math.round(z0.width / imageZoomLevels[0]), h: Math.round(z0.height / imageZoomLevels[0]), r: Math.round(Math.max(z0.width, z0.height) / imageZoomLevels[0]) / 2 },
+            z1: { w: Math.round(z1.width / imageZoomLevels[1]), h: Math.round(z1.height / imageZoomLevels[1]), r: Math.round(Math.max(z1.width, z1.height) / imageZoomLevels[1]) / 2 },
+            z2: { w: Math.round(z2.width / imageZoomLevels[2]), h: Math.round(z2.height / imageZoomLevels[2]), r: Math.round(Math.max(z2.width, z2.height) / imageZoomLevels[2]) / 2 },
+            z3: { w: Math.round(z3.width / imageZoomLevels[3]), h: Math.round(z3.height / imageZoomLevels[3]), r: Math.round(Math.max(z3.width, z3.height) / imageZoomLevels[3]) / 2 }
+        }
+        console.log('keystone', keystone);
+
         let widest = 0;
         let tallest = 0;
 
@@ -451,32 +456,24 @@ class SkillTree extends Component {
             if (keystone[`z${i}`].h > tallest) tallest = keystone[`z${i}`].h;
         }
 
-        if (cb === undefined) cb = () => this.resetTree(0);
-
         this.setState(() => {
             return {
-                groups: ourGroups,
-                nodes: ourNodes,
-                startingNodes: startingNodes,
-                ascStartingNodes: ascStartingNodes,
-                hitPoints: hitPoints,
                 sizeConstants: {
-                    widest: widest,
-                    tallest: tallest,
-                    normal: normal,
-                    notable: notable,
-                    keystone: keystone
-                }
+                    widest,
+                    tallest,
+                    normal,
+                    notable,
+                    keystone
+                },
+                loaded: true
             }
-        }, cb);
+        });
     }
 
     finishedLoadingAssets() {
         if (this.state.loaded) throw new Error(`Got loading done alert twice >:(`);
 
-        this.setState(() => {
-            return { loaded: true };
-        });
+        this.calculateSizeConstants();
     }
 
     handleCanvasMouseDown(event) {
@@ -561,8 +558,8 @@ class SkillTree extends Component {
         const { hitPoints, nodes } = this.state;
         const { widest, tallest, normal, notable, keystone } = this.state.sizeConstants;
 
-        let offX = Math.round((event.nativeEvent.offsetX - ((916 / 2) + (canX * scale))) / scale);
-        let offY = Math.round((event.nativeEvent.offsetY - ((767 / 2) + (canY * scale))) / scale);
+        let offX = Math.round((event.nativeEvent.offsetX - ((CAN_WIDTH / 2) + (canX * scale))) / scale);
+        let offY = Math.round((event.nativeEvent.offsetY - ((CAN_HEIGHT / 2) + (canY * scale))) / scale);
 
         for (let x = -(Math.floor(widest / 2)); x < Math.ceil(widest / 2); x++) {
             if (hitPoints[offX + x]) {
@@ -571,23 +568,26 @@ class SkillTree extends Component {
                         const node = nodes[hitPoints[offX + x][offY + y]];
                         switch (node.nodeType) {
                             case 'normal':
-                                if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2)) {
+                                //if (Math.abs(x) <= Math.round(normal[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(normal[`z${zoomLvl}`].h / 2)) {
+                                if (Math.round(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))) <= Math.round(normal[`z${zoomLvl}`].r)) {
                                     if (cb && typeof cb === 'function') cb(node, event);
                                     return true;
                                 }
-                                return false;
+                                break; //return false;
                             case 'notable':
-                                if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2)) {
+                                //if (Math.abs(x) <= Math.round(notable[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(notable[`z${zoomLvl}`].h / 2)) {
+                                if (Math.round(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))) <= Math.round(notable[`z${zoomLvl}`].r)) {
                                     if (cb && typeof cb === 'function') cb(node, event);
                                     return true;
                                 }
-                                return false;
+                                break; //return false;
                             case 'keystone':
-                                if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2)) {
+                                //if (Math.abs(x) <= Math.round(keystone[`z${zoomLvl}`].w / 2) && Math.abs(y) <= Math.round(keystone[`z${zoomLvl}`].h / 2)) {
+                                if (Math.round(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))) <= Math.round(keystone[`z${zoomLvl}`].r)) {
                                     if (cb && typeof cb === 'function') cb(node, event);
                                     return true;
                                 }
-                                return false;
+                                break; //return false;
                             default: throw new Error(`Bad hit point value in checkHit`);
                         }
                     }
@@ -1093,7 +1093,7 @@ export default SkillTree;
 
     *DONE* Implement another graph traversal algorithm to clear hanging nodes when the user deselects a node
 
-    Expand the hitboxes around nodes to be the size of their frame, they feel way too small right now
+    *DONE* Expand the hitboxes around nodes to be the size of their frame, they feel way too small right now
 
     *DONE* Add undo/redo? -> Might want to move away from nested setState calls, but from my current testing it seems to work fine and just spook react
         -Shouldn't be too hard to do, just build an array with nodes that were toggled since the last action
@@ -1123,4 +1123,19 @@ export default SkillTree;
                 tiles as the canvas is moved/zoomed around
                     -seems like a big task, but should be a sizable performance boost over drawing all the paths
                     and especially arcs every single update
+
+    10/4/19:
+    From testing the hosted version on my home PC and a friend's machine, performance is way better on the Macbook I'm using
+    for development than on either of our gaming oriented windows machines, and firefox performance is significantly worse than chrome.
+    On my PC specifically, performance is so bad that there's a 1 second delay for the canvas to redraw after clicking a node,
+    and dragging or zooming the canvas is less than one update per second.
+
+    While the skilltree.jsx methods are messy in places, the bulk of the slowdown seems to entirely relate to
+    the canvas drawing operations, so fixing those up should be a priority.
+
+    Tiles:
+        -Possibly store the tiles in tree base?
+        -GGG script uses a tile size of 512, so with the current size of the skill tree that's roughly 38x30 tiles or 1140 tiles.
+        -Will need to build out the tiles object, starting from (min_x, min_y)
+        -Then while drawing, draw only tiles that are visible
 */

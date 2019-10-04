@@ -67,6 +67,7 @@ class TreeOverlay extends Component {
             ctx.translate(-x1, -y1);
         }
 
+        const { CAN_WIDTH, CAN_HEIGHT } = this.props;
         const { nodes } = this.props;
         const { canX, canY, scale } = this.props;
         const canvas = this.canvasRef.current;
@@ -75,7 +76,7 @@ class TreeOverlay extends Component {
         const { pathToHoveredNode } = this.state;
         if (pathToHoveredNode.length !== 0) {
             ctx.save();
-            ctx.setTransform(scale, 0, 0, scale, 916 / 2 + canX * scale, 767 / 2 + canY * scale);
+            ctx.setTransform(scale, 0, 0, scale, CAN_WIDTH / 2 + canX * scale, CAN_HEIGHT / 2 + canY * scale);
 
             ctx.strokeStyle = '#f7c8d8dd';
             ctx.fillStyle = '#f7c8d8dd';

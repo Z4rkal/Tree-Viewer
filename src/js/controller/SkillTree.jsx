@@ -42,7 +42,7 @@ class SkillTree extends Component {
             canX: 0,
             canY: 0,
             scale: 0.4,
-            zoomLvl: 0,
+            zoomLvl: 3,
             isDragging: false,
             canClick: false,
             latestCursorX: 0,
@@ -620,7 +620,7 @@ class SkillTree extends Component {
         }
     }
 
-    toggleNode(nodeId, cb, notAction) {
+    toggleNode(nodeId, cb) {
         this.setState((state) => {
             const node = state.nodes[nodeId];
             if (!node) throw new Error(`Invalid Node Id: ${nodeId}`);
@@ -657,15 +657,6 @@ class SkillTree extends Component {
                 else {
                     if (!activeNodes[nodeId]) throw new Error(`Tried to remove an inactive node from activeNodes`);
                     delete activeNodes[nodeId];
-                }
-            }
-
-            if (notAction) {
-                return {
-                    nodes,
-                    activeNodes,
-                    pointsUsed,
-                    ascPointsUsed
                 }
             }
 
@@ -931,13 +922,18 @@ class SkillTree extends Component {
     }
 
     keyEventHandler(event) {
-        if (event.target.localName !== 'input' && event.key === 'z' && (event.ctrlKey || event.metaKey)) {
-            event.preventDefault();
-            this.handleUndo();
-        }
-        else if (event.target.localName !== 'input' && event.key === 'Z' && event.shiftKey && (event.ctrlKey || event.metaKey)) {
-            event.preventDefault();
-            this.handleRedo();
+        // console.log(event.key, event.shiftKey, event.metaKey); 
+        //event.key is z without shift, Z with shift
+        //EXCEPT when the command key is pressed on mac, then it's z
+        if (event.target.localName !== 'input' && event.key === 'z' || event.key === 'Z') {
+            if (!event.shiftKey && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                this.handleUndo();
+            }
+            else if (event.shiftKey && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                this.handleRedo();
+            }
         }
     }
 
@@ -949,6 +945,9 @@ class SkillTree extends Component {
             if (treeActionIndex + 1 < treeActions.length) {
                 const currentAction = [...treeActions[treeActionIndex]];
                 let { classStartingNodeId, ascClassId, ascClassname } = state;
+                let activeNodes = { ...state.activeNodes };
+                let nodes = { ...state.nodes };
+                let { pointsUsed, ascPointsUsed } = state;
 
                 currentAction.map((action) => {
                     if (typeof action === 'object') {
@@ -966,12 +965,56 @@ class SkillTree extends Component {
                         // this.toggleNode(action.node, null, true);
                     }
                     else if (typeof action === 'number' || typeof action === 'string') {
-                        this.toggleNode(action, null, true);
+                        // this.toggleNode(action, null, true);
+                        //////////////////////////////////////
+                        const node = { ...nodes[action] };
+                        if (!node) throw new Error(`Invalid Node Id: ${action}`);
+
+                        const nodeId = node.id;
+
+                        const adjacentChange = !node.active ? 1 : -1;
+
+                        for (let i = 0; i < node.adjacent.length; i++) {
+                            const outNode = nodes[node.adjacent[i]];
+
+                            if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
+                            if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(\nNode: ${node}\nOut Node: ${JSON.stringify(outNode)}`);
+
+                            nodes[outNode.id] = { ...nodes[outNode.id], canTake: nodes[outNode.id].canTake + adjacentChange };
+                        }
+
+                        if (!state.startingNodes[nodeId] && !state.ascStartingNodes[nodeId]) {
+                            if (!nodes[nodeId].isBlighted) {
+                                if (!nodes[nodeId].ascendancyName) {
+                                    if (nodes[nodeId].passivePointsGranted === 0) pointsUsed += adjacentChange;
+                                    else pointsUsed -= adjacentChange * nodes[nodeId].passivePointsGranted;
+                                }
+                                else {
+                                    if (nodes[nodeId].passivePointsGranted !== 0) pointsUsed -= adjacentChange * nodes[nodeId].passivePointsGranted;
+                                    ascPointsUsed += adjacentChange;
+                                }
+                            }
+
+                            if (!nodes[nodeId].active) {
+                                activeNodes[nodeId] = true;
+                            }
+                            else {
+                                if (!activeNodes[nodeId]) throw new Error(`Tried to remove an inactive node from activeNodes`);
+                                delete activeNodes[nodeId];
+                            }
+                        }
+
+                        nodes[action] = { ...node, active: !node.active };
+                        //////////////////////////////////////
                     }
                     else throw new Error(`Bad action (${action}, type: ${typeof action}) in handleUndo`);
                 });
 
                 return {
+                    nodes,
+                    activeNodes,
+                    pointsUsed,
+                    ascPointsUsed,
                     classStartingNodeId,
                     ascClassId,
                     ascClassname,
@@ -990,6 +1033,9 @@ class SkillTree extends Component {
             if (treeActionIndex - 1 >= 0) {
                 const currentAction = [...treeActions[treeActionIndex - 1]];
                 let { classStartingNodeId, ascClassId, ascClassname } = state;
+                let activeNodes = { ...state.activeNodes };
+                let nodes = { ...state.nodes };
+                let { pointsUsed, ascPointsUsed } = state;
 
                 currentAction.map((action) => {
                     if (typeof action === 'object') {
@@ -1007,12 +1053,56 @@ class SkillTree extends Component {
                         // this.toggleNode(action.node, null, true);
                     }
                     else if (typeof action === 'number' || typeof action === 'string') {
-                        this.toggleNode(action, null, true);
+                        // this.toggleNode(action, null, true);
+                        //////////////////////////////////////
+                        const node = { ...nodes[action] };
+                        if (!node) throw new Error(`Invalid Node Id: ${action}`);
+
+                        const nodeId = node.id;
+
+                        const adjacentChange = !node.active ? 1 : -1;
+
+                        for (let i = 0; i < node.adjacent.length; i++) {
+                            const outNode = nodes[node.adjacent[i]];
+
+                            if (!outNode) throw new Error(`Invalid Adjacent Node in handleNodeClick: ${outNode.id}`);
+                            if (outNode.canTake + adjacentChange < 0) throw new Error(`Tried to decrement ${outNode.id}'s canTake below 0 >:(\nNode: ${node}\nOut Node: ${JSON.stringify(outNode)}`);
+
+                            nodes[outNode.id] = { ...nodes[outNode.id], canTake: nodes[outNode.id].canTake + adjacentChange };
+                        }
+
+                        if (!state.startingNodes[nodeId] && !state.ascStartingNodes[nodeId]) {
+                            if (!nodes[nodeId].isBlighted) {
+                                if (!nodes[nodeId].ascendancyName) {
+                                    if (nodes[nodeId].passivePointsGranted === 0) pointsUsed += adjacentChange;
+                                    else pointsUsed -= adjacentChange * nodes[nodeId].passivePointsGranted;
+                                }
+                                else {
+                                    if (nodes[nodeId].passivePointsGranted !== 0) pointsUsed -= adjacentChange * nodes[nodeId].passivePointsGranted;
+                                    ascPointsUsed += adjacentChange;
+                                }
+                            }
+
+                            if (!nodes[nodeId].active) {
+                                activeNodes[nodeId] = true;
+                            }
+                            else {
+                                if (!activeNodes[nodeId]) throw new Error(`Tried to remove an inactive node from activeNodes`);
+                                delete activeNodes[nodeId];
+                            }
+                        }
+
+                        nodes[action] = { ...node, active: !node.active };
+                        //////////////////////////////////////
                     }
                     else throw new Error(`Bad action (${action}) in handleRedo`);
                 });
 
                 return {
+                    nodes,
+                    activeNodes,
+                    pointsUsed,
+                    ascPointsUsed,
                     classStartingNodeId,
                     ascClassId,
                     ascClassname,
@@ -1141,4 +1231,8 @@ export default SkillTree;
         -GGG script uses a tile size of 512, so with the current size of the skill tree that's roughly 38x30 tiles or 1140 tiles.
         -Will need to build out the tiles object, starting from (min_x, min_y)
         -Then while drawing, draw only tiles that are visible
+
+
+    10/7/19:
+        -Core of toggleNode should probably be a resusable function, since it keeps getting reused in different edge cases
 */

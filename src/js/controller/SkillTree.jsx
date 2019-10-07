@@ -41,7 +41,7 @@ class SkillTree extends Component {
             sizeConstants: {},
             canX: 0,
             canY: 0,
-            scale: 0.1,
+            scale: 0.4,
             zoomLvl: 0,
             isDragging: false,
             canClick: false,
@@ -416,7 +416,7 @@ class SkillTree extends Component {
             z2: { w: Math.round(z2.width / imageZoomLevels[2]), h: Math.round(z2.height / imageZoomLevels[2]), r: Math.round(Math.max(z2.width, z2.height) / imageZoomLevels[2]) / 2 },
             z3: { w: Math.round(z3.width / imageZoomLevels[3]), h: Math.round(z3.height / imageZoomLevels[3]), r: Math.round(Math.max(z3.width, z3.height) / imageZoomLevels[3]) / 2 }
         }
-        console.log('normal', normal);
+        // console.log('normal', normal);
 
         z0 = document.getElementById(`NotableFrameUnallocated-0`);
         z1 = document.getElementById(`NotableFrameUnallocated-1`);
@@ -429,7 +429,7 @@ class SkillTree extends Component {
             z2: { w: Math.round(z2.width / imageZoomLevels[2]), h: Math.round(z2.height / imageZoomLevels[2]), r: Math.round(Math.max(z2.width, z2.height) / imageZoomLevels[2]) / 2 },
             z3: { w: Math.round(z3.width / imageZoomLevels[3]), h: Math.round(z3.height / imageZoomLevels[3]), r: Math.round(Math.max(z3.width, z3.height) / imageZoomLevels[3]) / 2 }
         }
-        console.log('notable', notable);
+        // console.log('notable', notable);
 
         z0 = document.getElementById(`KeystoneFrameUnallocated-0`);
         z1 = document.getElementById(`KeystoneFrameUnallocated-1`);
@@ -442,7 +442,7 @@ class SkillTree extends Component {
             z2: { w: Math.round(z2.width / imageZoomLevels[2]), h: Math.round(z2.height / imageZoomLevels[2]), r: Math.round(Math.max(z2.width, z2.height) / imageZoomLevels[2]) / 2 },
             z3: { w: Math.round(z3.width / imageZoomLevels[3]), h: Math.round(z3.height / imageZoomLevels[3]), r: Math.round(Math.max(z3.width, z3.height) / imageZoomLevels[3]) / 2 }
         }
-        console.log('keystone', keystone);
+        // console.log('keystone', keystone);
 
         let widest = 0;
         let tallest = 0;
@@ -500,8 +500,8 @@ class SkillTree extends Component {
             this.setState((state) => {
                 return {
                     canClick: false,
-                    canX: state.canX + (eventX - state.latestCursorX) * 2 / state.scale,
-                    canY: state.canY + (eventY - state.latestCursorY) * 2 / state.scale,
+                    canX: state.canX + (eventX - state.latestCursorX) * 1 / state.scale,
+                    canY: state.canY + (eventY - state.latestCursorY) * 1 / state.scale,
                     latestCursorX: eventX,
                     latestCursorY: eventY
                 };
@@ -518,8 +518,8 @@ class SkillTree extends Component {
         this.setState((state) => {
             return {
                 isDragging: false,
-                canX: !state.canClick ? state.canX + (eventX - latestCursorX) * 2 / state.scale : state.canX,
-                canY: !state.canClick ? state.canY + (eventY - latestCursorY) * 2 / state.scale : state.canY
+                canX: !state.canClick ? state.canX + (eventX - latestCursorX) * 1 / state.scale : state.canX,
+                canY: !state.canClick ? state.canY + (eventY - latestCursorY) * 1 / state.scale : state.canY
             };
         });
     }
@@ -527,9 +527,12 @@ class SkillTree extends Component {
     handleZoom(event) {
         const { scale } = this.state;
 
-        const dY = Math.floor(event.deltaY) / 1000;
+        let dY = Math.floor(event.deltaY) / 1000;
 
-        let newScale = Math.max(Math.min(scale - dY, 1), 0.1)
+        if (dY >= 0) dY = Math.max(dY, 0.05);
+        else dY = Math.min(dY, -0.05);
+
+        const newScale = Math.max(Math.min(scale - dY, 1), 0.1);
 
         let newZoom;
         if (newScale <= imageZoomLevels[0]) {

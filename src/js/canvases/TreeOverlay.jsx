@@ -54,24 +54,27 @@ class TreeOverlay extends Component {
             ctx.translate(-x, -y);
         }
 
-        function drawPath(ctx, path) {
-            const { x1, y1, w, ø, startId, outId } = path;
+        function drawPath(ctx, pathId, paths) {
+            const path = paths[pathId];
+            const { x0, y0, w, ø, startId, outId } = path;
 
-            ctx.translate(x1, y1);
+            ctx.translate(x0, y0);
             ctx.rotate(ø);
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(w, 0);
             ctx.stroke();
             ctx.rotate(-ø);
-            ctx.translate(-x1, -y1);
+            ctx.translate(-x0, -y0);
         }
 
         const { CAN_WIDTH, CAN_HEIGHT } = this.props;
-        const { nodes } = this.props;
+        const { nodes, paths } = this.props;
         const { canX, canY, scale } = this.props;
         const canvas = this.canvasRef.current;
         const ctx = canvas.getContext('2d');
+
+        let drawnPaths = {};
 
         const { pathToHoveredNode } = this.state;
         if (pathToHoveredNode.length !== 0) {
@@ -83,7 +86,7 @@ class TreeOverlay extends Component {
 
             pathToHoveredNode.map((nodeId) => {
                 const node = nodes[nodeId];
-                const { nX, nY, adjacent, arcs, paths } = node;
+                const { nX, nY, adjacent, arcs, pathKeys } = node;
 
                 ctx.lineWidth = 6;
                 ctx.beginPath();
@@ -101,11 +104,12 @@ class TreeOverlay extends Component {
                             drawArc(ctx, arcToTheCurrentNode);
                         }
                         else {
-                            const pathToTheCurrentNode = adjNode.paths.find((path) => path.outId === nodeId);
+                            const pathIdToTheCurrentNode = adjNode.pathKeys.find((pathId) => paths[pathId].outId === nodeId);
 
-                            if (pathToTheCurrentNode) {
+                            if (pathIdToTheCurrentNode && !drawnPaths[pathIdToTheCurrentNode]) {
+                                drawnPaths[pathIdToTheCurrentNode] = true;
                                 foundArcOrPath = true;
-                                drawPath(ctx, pathToTheCurrentNode);
+                                drawPath(ctx, pathIdToTheCurrentNode, paths);
                             }
                         }
                         if (adjNode.active && !foundArcOrPath) {
@@ -113,9 +117,12 @@ class TreeOverlay extends Component {
                                 if (arc.startId === adjNode.id || arc.outId === adjNode.id)
                                     drawArc(ctx, arc);
                             });
-                            paths.map((path) => {
-                                if (path.outId === adjNode.id)
-                                    drawPath(ctx, path);
+                            pathKeys.map((pathId) => {
+                                const path = paths[pathId];
+                                if (path.outId === adjNode.id && !drawnPaths[pathId]) {
+                                    drawnPaths[pathId] = true;
+                                    drawPath(ctx, pathId, paths);
+                                }
                             });
                         }
                     }
@@ -217,7 +224,7 @@ class TreeOverlay extends Component {
         ctx.font = debugFont;
         ctx.fillStyle = '#a5a5a5';
         ctx.fillText(nodeIdText, longest + wOff / 2, hLine - 5);
-        
+
         ctx.textAlign = 'start';
         ctx.translate(0, -(hOff + sd.length * hLine));
         ctx.translate(-(x - xOff), -(y - yOff));

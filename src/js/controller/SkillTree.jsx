@@ -28,6 +28,7 @@ class SkillTree extends Component {
         this.state = {
             groups: {},
             nodes: {},
+            paths: [],
             activeNodes: {},
             classStartingNodeId: 0,
             ascClassId: 0,
@@ -115,36 +116,11 @@ class SkillTree extends Component {
         let ascStartingNodes = {};
         let hitPoints = {};
 
-        Object.entries(groups).map(([groupKey, group]/*,groupIndex*/) => {
+        let paths = [];
+        Object.entries(groups).map(([groupKey, group]) => {
             ourGroups[groupKey] = { ...groups[groupKey] };
-            group.n.map((nodeId/*,nodeIndex*/) => {
+            group.n.map((nodeId) => {
                 if (nodes[nodeId]) {
-
-                    /* example node
-                    "30225": {
-                        "id": 30225, 
-                        "icon": "Art\/2DArt\/SkillIcons\/passives\/stormborn.png", 
-                        "ks": false, 
-                        "not": true, 
-                        "dn": "Lightning Walker", 
-                        "m": false, 
-                        "isJewelSocket": false, 
-                        "isMultipleChoice": false, 
-                        "isMultipleChoiceOption": false, 
-                        "passivePointsGranted": 0, 
-                        "spc": [], 
-                        "sd": ["25% increased Lightning Damage", "5% increased Cast Speed with Lightning Skills", "+15% to Lightning Resistance"], 
-                        "g": 1, 
-                        "o": 0, 
-                        "oidx": 0, 
-                        "sa": 0, 
-                        "da": 0, 
-                        "ia": 0, 
-                        "out": [58604, 4184], 
-                        "in": []
-                    }
-                    */
-
                     const node = { ...nodes[nodeId] };
                     const { icon, o, oidx } = node;
                     const { ks, not, m } = node;
@@ -153,8 +129,8 @@ class SkillTree extends Component {
                     if (!ourNodes[nodeId])
                         ourNodes[nodeId] = node;
 
-                    const nodeType = m ? 'mastery' : ks ? 'keystone' : not ? 'notable' : 'normal';// + (!m ? 'Active' : '');
-                    const srcRoot = (m ? 'groups-' : 'skills-');// + `${zoomLvl}`;
+                    const nodeType = m ? 'mastery' : ks ? 'keystone' : not ? 'notable' : 'normal';
+                    const srcRoot = (m ? 'groups-' : 'skills-');
 
                     const radius = orbitRadii[o];
                     const numOnOrbit = skillsPerOrbit[o];
@@ -183,8 +159,6 @@ class SkillTree extends Component {
                         hitPoints[intX][intY] = nodeId;
                     }
 
-
-                    //Should deep clone the node and any objects we're putting in to it to avoid side effects
                     ourNodes[nodeId].srcRoot = srcRoot;
                     ourNodes[nodeId].nodeType = nodeType;
                     ourNodes[nodeId].nX = nX;
@@ -198,9 +172,11 @@ class SkillTree extends Component {
                         ourNodes[nodeId].adjacent = [];
 
                     let arcs = [];
-                    let paths = [];
                     let arcId = 0;
-                    let pathId = 0;
+
+                    if (ourNodes[nodeId].pathKeys === undefined)
+                        ourNodes[nodeId].pathKeys = [];
+
                     out.map((outId) => {
                         const outNode = nodes[outId];
                         if (!ourNodes[outId])
@@ -271,21 +247,28 @@ class SkillTree extends Component {
                             let øPath = Math.atan2(outNodeY - nY, outNodeX - nX);
                             let pathLength = Math.sqrt(Math.pow(outNodeY - nY, 2) + Math.pow(outNodeX - nX, 2));
 
-                            paths[pathId] = {
-                                x1: nX,
-                                y1: nY,
+
+                            const pathId = paths.length;
+                            paths.push({
+                                x0: nX,
+                                y0: nY,
+                                x1: outNodeX,
+                                y1: outNodeY,
                                 w: pathLength,
                                 ø: øPath,
                                 startId: nodeId,
-                                outId: outId
-                            }
+                                outId: outId,
+                                pathId
+                            });
 
-                            pathId++;
+                            if (ourNodes[outId].pathKeys === undefined) ourNodes[outId].pathKeys = [pathId];
+                            else ourNodes[outId].pathKeys.push(pathId);
+
+                            ourNodes[nodeId].pathKeys.push(pathId);
                         }
                     });
 
                     ourNodes[nodeId].arcs = arcs;
-                    ourNodes[nodeId].paths = paths;
 
                     if (!ourGroups[groupKey].isAscendancy && ourNodes[nodeId].ascendancyName)
                         ourGroups[groupKey].isAscendancy = true;
@@ -395,7 +378,8 @@ class SkillTree extends Component {
                 nodes: ourNodes,
                 startingNodes,
                 ascStartingNodes,
-                hitPoints
+                hitPoints,
+                paths
             }
         }, cb);
     }
@@ -1115,7 +1099,7 @@ class SkillTree extends Component {
     }
 
     render() {
-        const { groups, nodes, startingNodes, ascStartingNodes, hitPoints, sizeConstants, loaded } = this.state;
+        const { groups, nodes, paths, startingNodes, ascStartingNodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
         const { pointsUsed, ascPointsUsed, classStartingNodeId, ascClassId } = this.state;
 
@@ -1129,10 +1113,10 @@ class SkillTree extends Component {
                     </div>
                     <div id='tree-canvas-container' className='tree-row' style={{ width: `${CAN_WIDTH}px`, height: `${CAN_HEIGHT}px` }}>
                         <TreeBase CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
-                            groups={groups} nodes={nodes} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
+                            groups={groups} nodes={nodes} paths={paths} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} />
                         <TreeOverlay CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
-                            nodes={nodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
+                            nodes={nodes} paths={paths} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
                             handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick}
                             findPathToNode={this.findPathToNode} />

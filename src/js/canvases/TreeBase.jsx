@@ -4,6 +4,8 @@ import { passiveSkillTreeData } from '../../data/Tree';
 const { skillSprites, imageZoomLevels } = passiveSkillTreeData;
 const { min_x, max_x, min_y, max_y } = passiveSkillTreeData;
 
+import checkForVisibleIntersect from '../lib/checkForVisibleIntersect';
+
 class TreeBase extends Component {
     constructor() {
         super()
@@ -52,11 +54,13 @@ class TreeBase extends Component {
 
     drawTreeStructure() {
         const { CAN_WIDTH, CAN_HEIGHT } = this.props;
-        const { groups, nodes } = this.props;
+        const { groups, nodes, paths } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
         const { keystone } = this.props.sizeConstants;
         const scaleAtCurrentZoomLevel = imageZoomLevels[zoomLvl];
+
+        let drawnPaths = {};
 
         if (Object.values(groups).length !== 0 && Object.values(nodes).length !== 0) {
             const canvas = this.canvasRef.current;
@@ -86,7 +90,7 @@ class TreeBase extends Component {
                             const node = nodes[nodeId];
                             const { icon, srcRoot, nX, nY } = node;
                             const { nodeType, active, canTake } = node;
-                            const { arcs, paths } = node;
+                            const { arcs, pathKeys } = node;
 
                             const spriteType = active !== null ? nodeType + (active ? 'Active' : 'Inactive') : nodeType;
                             const srcId = srcRoot + (active === null || active ? '' : 'disabled-') + `${zoomLvl}`;
@@ -205,71 +209,73 @@ class TreeBase extends Component {
                                 ctx.restore();
                             });
 
-                            paths.map((path) => {
-                                const { x1, y1, w, ø, startId, outId } = path;
+                            pathKeys.map((pathId) => {
+                                if (!drawnPaths[pathId]) {
+                                    drawnPaths[pathId] = true;
+                                    const path = paths[pathId];
+                                    const { x0, y0, w, ø, startId, outId } = path;
 
-                                const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
-                                const lineSrc = document.getElementById(`${lineId}`);
+                                    const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
+                                    const lineSrc = document.getElementById(`${lineId}`);
 
-                                if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
+                                    if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
 
-                                const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
+                                    const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
 
-                                const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
-                                const decoSrc = document.getElementById(`${decoId}`);
+                                    const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
+                                    const decoSrc = document.getElementById(`${decoId}`);
 
-                                const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
-                                const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
+                                    const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
+                                    const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
 
-                                ctx.translate(x1, y1);
-                                ctx.rotate(ø);
-                                ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                                ctx.scale(-1, 1);
-                                ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                                ctx.scale(-1, 1);
-                                ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
-                                ctx.rotate(-ø);
-                                ctx.translate(-x1, -y1);
-                            });
-
-                            node.adjacent.map((adjNodeId) => { //Probably not the solution, might need to have paths outside of the nodes
-                                const outNode = nodes[adjNodeId];
-                                if (outNode.g !== node.g) {
-                                    outNode.paths.map((path) => {
-                                        const { outId } = path;
-
-                                        if (outId === node.id) {
-                                            const { x1, y1, w, ø, startId } = path;
-
-                                            const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
-                                            const lineSrc = document.getElementById(`${lineId}`);
-
-                                            if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
-
-                                            const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
-
-                                            const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
-                                            const decoSrc = document.getElementById(`${decoId}`);
-
-                                            const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
-                                            const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
-
-                                            ctx.translate(x1, y1);
-                                            ctx.rotate(ø);
-                                            ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                                            ctx.scale(-1, 1);
-                                            ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
-                                            ctx.scale(-1, 1);
-                                            ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
-                                            ctx.rotate(-ø);
-                                            ctx.translate(-x1, -y1);
-                                        }
-                                    })
+                                    ctx.translate(x0, y0);
+                                    ctx.rotate(ø);
+                                    ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                                    ctx.scale(-1, 1);
+                                    ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                                    ctx.scale(-1, 1);
+                                    ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
+                                    ctx.rotate(-ø);
+                                    ctx.translate(-x0, -y0);
                                 }
                             });
+
                             ctx.globalCompositeOperation = 'source-over';
                         }
                     });
+                }
+            });
+
+            paths.map((path, pathId) => {
+                if (!drawnPaths[pathId]) { //Search for any paths that intersect the visible canvas and draw them
+                    if (checkForVisibleIntersect(path, canX, canY, CAN_WIDTH, CAN_HEIGHT, scale)) {
+                        drawnPaths[pathId] = true;
+                        const path = paths[pathId];
+                        const { x0, y0, w, ø, startId, outId } = path;
+
+                        const lineId = `LineConnector${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;
+                        const lineSrc = document.getElementById(`${lineId}`);
+
+                        if (ø === undefined || w === undefined) throw new Error(`Path calculation broke for node ${nodeId}`);
+
+                        const lineHeight = Math.round(lineSrc.height / scaleAtCurrentZoomLevel);
+
+                        const decoId = `PSLineDeco${nodes[startId].active && nodes[outId].active ? 'Highlighted' : ''}-${zoomLvl}`;
+                        const decoSrc = document.getElementById(`${decoId}`);
+
+                        const decoWidth = Math.round(decoSrc.width / scaleAtCurrentZoomLevel);
+                        const decoHeight = Math.round(decoSrc.height / scaleAtCurrentZoomLevel);
+
+                        ctx.translate(x0, y0);
+                        ctx.rotate(ø);
+                        ctx.drawImage(decoSrc, 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(decoSrc, -w + 25, 0 - (decoHeight / 2), decoWidth, decoHeight);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(lineSrc, 0, 0 - (lineHeight / 2), Math.round(w), lineHeight)
+                        ctx.rotate(-ø);
+                        ctx.translate(-x0, -y0);
+                    }
                 }
             });
         }

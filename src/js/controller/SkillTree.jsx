@@ -586,7 +586,9 @@ class SkillTree extends Component {
     }
 
     handleNodeClick(node) {
-        if (node && node.spc.length === 0 && !node.isAscendancyStart) {
+        const { ascClassname } = this.state;
+
+        if (node && node.spc.length === 0 && !node.isAscendancyStart && (!node.ascendancyName || node.ascendancyName === ascClassname)) {
 
             if (node.canTake === 1 || node.isBlighted) {
                 this.beginNextAction(() => this.toggleNode(node.id));
@@ -806,51 +808,52 @@ class SkillTree extends Component {
 
         const { nodes, startingNodes, ascClassname } = this.state;
 
-        const startingNode = nodes[nodeId];
-        if (!startingNode) throw new Error(`Invalid starting Node Id in findPathToNode: ${nodeId}`);
+        if (!startingNodes[nodeId] && (!nodes[nodeId].ascendancyName || nodes[nodeId].ascendancyName === ascClassname)) {
+            const startingNode = nodes[nodeId];
+            if (!startingNode) throw new Error(`Invalid starting Node Id in findPathToNode: ${nodeId}`);
 
-        let visited = { [nodeId]: 'root' };
-        let queue = [nodeId];
+            let visited = { [nodeId]: 'root' };
+            let queue = [nodeId];
 
-        let found = false;
-        let shortest = undefined;
-        while (queue.length !== 0) {
-            let curNode = nodes[queue.shift()];
+            let found = false;
+            let shortest = undefined;
+            while (queue.length !== 0) {
+                let curNode = nodes[queue.shift()];
 
-            if (curNode.canTake) {
-                let len = findLength(curNode.id, visited)
-                if (!shortest || len < shortest[1]) {
-                    shortest = [curNode.id, len];
+                if (curNode.canTake) {
+                    let len = findLength(curNode.id, visited)
+                    if (!shortest || len < shortest[1]) {
+                        shortest = [curNode.id, len];
+                    }
                 }
-            }
 
-            let adjLen = findLength(curNode.id, visited) + 1;
-            if (!shortest || adjLen <= shortest) {
-                for (let i = 0; i < curNode.adjacent.length; i++) {
-                    if (!visited[curNode.adjacent[i]]) {
-                        if (!startingNodes[curNode.adjacent[i]] && (!nodes[curNode.adjacent[i]].ascendancyName || nodes[curNode.adjacent[i]].ascendancyName === ascClassname)) {
+                let adjLen = findLength(curNode.id, visited) + 1;
+                if (!shortest || adjLen <= shortest) {
+                    for (let i = 0; i < curNode.adjacent.length; i++) {
+                        if (!visited[curNode.adjacent[i]]) {
+                            if (!startingNodes[curNode.adjacent[i]] && (!nodes[curNode.adjacent[i]].ascendancyName || nodes[curNode.adjacent[i]].ascendancyName === ascClassname)) {
+                                visited[curNode.adjacent[i]] = curNode.id;
+                                queue.push(nodes[curNode.adjacent[i]].id);
+                            }
+                        }
+                        else if (curNode.adjacent[i] !== visited[curNode.id] && adjLen < findLength(curNode.adjacent[i], visited)) {
                             visited[curNode.adjacent[i]] = curNode.id;
-                            queue.push(nodes[curNode.adjacent[i]].id);
+                            if (shortest !== undefined && findLength(shortest[0]) < shortest[1]) shortest[1] = findLength(shortest[0]);
                         }
                     }
-                    else if (curNode.adjacent[i] !== visited[curNode.id] && adjLen < findLength(curNode.adjacent[i], visited)) {
-                        visited[curNode.adjacent[i]] = curNode.id;
-                        if (shortest !== undefined && findLength(shortest[0]) < shortest[1]) shortest[1] = findLength(shortest[0]);
+                }
+                if (queue.length === 0 && shortest) found = true;
+            }
+
+            if (found) {
+                if (typeof cb === 'function') { //Use the callback for each node on the shortest path
+                    for (let pathNodeId = shortest[0]; pathNodeId !== 'root' && visited[pathNodeId]; pathNodeId = visited[pathNodeId]) {
+                        cb(pathNodeId); //Goes through the path in reverse, just something to note
                     }
                 }
+                return true;
             }
-            if (queue.length === 0 && shortest) found = true;
         }
-
-        if (found) {
-            if (typeof cb === 'function') { //Use the callback for each node on the shortest path
-                for (let pathNodeId = shortest[0]; pathNodeId !== 'root' && visited[pathNodeId]; pathNodeId = visited[pathNodeId]) {
-                    cb(pathNodeId); //Goes through the path in reverse, just something to note
-                }
-            }
-            return true;
-        }
-
         return false;
     }
 

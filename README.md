@@ -21,6 +21,8 @@ Hitting `ctrl+z` or `command+z` will undo an action, and hitting `ctrl+shift+z` 
 
 The number of passive points and ascendancy points in use are displayed at the top of the page, and to the right of them there are dropdowns that let you select your class and ascendancy.
 
+Note: Currently Ascendant is a little wierd, as I haven't done anything with multiple choice nodes
+
 At the bottom of the page there's a field where you can paste in a URL \(Or the base 64 string at the end of it\) from the [official site](https://www.pathofexile.com/passive-skill-tree) and click the `import` button next to it to load a skill tree.
 
 To the right of that, there's a button labeled `export` that you can click to export the current tree as a base 64 string like so:
@@ -30,8 +32,6 @@ To the right of that, there's a button labeled `export` that you can click to ex
 You can use this string to copy your tree to the official site or other community tools. On the official site you simply need to put the string after `https://www.pathofexile.com/passive-skill-tree/` in the URL.
 
 Currently the web page automatically saves the current tree to your cookies before the page closes, and then checks to see if that cookie exists to load the stored tree when it the web page is opened again, but I plan on changing it to a manual save button soon.
-
-I should also note that the app performs really poorly zoomed out on some of the machines I've tested it on, but that's something I'm currently working on improving so it should hopefully be less of an issue soon.
 
 #
 ### Setup

@@ -118,7 +118,7 @@ class SkillTree extends Component {
 
         let paths = [];
         Object.entries(groups).map(([groupKey, group]) => {
-            ourGroups[groupKey] = { ...groups[groupKey] };
+            ourGroups[groupKey] = { id: groupKey, ...groups[groupKey] };
             group.n.map((nodeId) => {
                 if (nodes[nodeId]) {
                     const node = { ...nodes[nodeId] };
@@ -1102,6 +1102,7 @@ class SkillTree extends Component {
         const { groups, nodes, paths, startingNodes, ascStartingNodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
         const { pointsUsed, ascPointsUsed, classStartingNodeId, ascClassId } = this.state;
+        const { activeNodes } = this.state;
 
         return (
             <>
@@ -1114,7 +1115,8 @@ class SkillTree extends Component {
                     <div id='tree-canvas-container' className='tree-row' style={{ width: `${CAN_WIDTH}px`, height: `${CAN_HEIGHT}px` }}>
                         <TreeBase CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
                             groups={groups} nodes={nodes} paths={paths} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
-                            canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} />
+                            canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl}
+                            activeNodes={activeNodes} />
                         <TreeOverlay CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
                             nodes={nodes} paths={paths} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}

@@ -594,8 +594,7 @@ class SkillTree extends Component {
                 this.beginNextAction(() => this.toggleNode(node.id));
             }
             else if (node.canTake > 1) {
-                //TODO: determine whether removing a node with more than one adjacent active node will break the tree
-                //If it will, then remove the hanging nodes
+                //If the node is active then find any hanging nodes and remove them
                 if (node.active) this.beginNextAction(() => this.toggleNode(node.id, () => this.findHangingNodes(this.toggleNode)));
                 else this.beginNextAction(() => this.toggleNode(node.id));
             }
@@ -1105,7 +1104,7 @@ class SkillTree extends Component {
         const { groups, nodes, paths, startingNodes, ascStartingNodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
         const { pointsUsed, ascPointsUsed, classStartingNodeId, ascClassId } = this.state;
-        const { activeNodes } = this.state;
+        const { activeNodes, ascClassname } = this.state;
 
         return (
             <>
@@ -1119,7 +1118,7 @@ class SkillTree extends Component {
                         <TreeBase CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
                             groups={groups} nodes={nodes} paths={paths} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl}
-                            activeNodes={activeNodes} />
+                            activeNodes={activeNodes} ascClassname={ascClassname} />
                         <TreeOverlay CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
                             nodes={nodes} paths={paths} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
@@ -1186,14 +1185,14 @@ export default SkillTree;
 
     Add character stats around the starting plaque
 
-    Next Steps: Weeks 3/4
+    Next Steps: Weeks 3/4 --> Maybe should be a second project, with the tree viewer as a standalone component
         --Primary: Start working on the stat handler
             -Decide how it'll interact with SkillTree
                 -Current thoughts: have it sit above the skill tree and get updates whenever a node is toggled
                     -Could have a handleNodeChange function passed down as a prop, and call it with the node being toggled
                     and a boolean for whether the node is being taken or removed inside of the updater toggleNode creates
 
-        --Secondary: Optimization for existing stuff
+        --Secondary: Optimization for existing stuff *Did some of it, canvas drawing is significantly faster now*
             -Do an optimization pass on SkillTree.jsx methods
                 -I've optimized the canvas a fair bit since I got it working, but most of the SkillTree methods are unecessarily
                 expensive and haven't been touched since I slapped them together
@@ -1224,4 +1223,14 @@ export default SkillTree;
 
     10/7/19:
         -Core of toggleNode should probably be a resusable function, since it keeps getting reused in different edge cases
+
+    10/10/19:
+    Last things I want to add before putting this down for a bit:
+        -Improve the load screen
+        -Add shift queueing to hovering nodes
+        -Maybe add tiles for more speed improvements
+        -Search bar,
+        -Something that tallies all your stats somewhere
+        -*DONE* Gray out ascendancy classes that aren't selected
+        -Add str/int/dex around the character plaque
 */

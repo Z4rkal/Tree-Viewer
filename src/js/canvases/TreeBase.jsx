@@ -236,6 +236,7 @@ class TreeBase extends Component {
     drawBackGround() {
         const { CAN_WIDTH, CAN_HEIGHT } = this.props;
         const { groups, nodes, startingNodes, ascStartingNodes } = this.props;
+        const { ascClassname } = this.props;
         const { canX, canY } = this.props;
         const { scale, zoomLvl } = this.props;
         const scaleAtCurrentZoomLevel = imageZoomLevels[zoomLvl];
@@ -272,10 +273,22 @@ class TreeBase extends Component {
 
                 const { nX, nY } = nodes[node.nodeId];
 
-                if (((nX + canX) <= (CAN_WIDTH) / (2 * scale) && (nY + canY) <= (CAN_HEIGHT) / (2 * scale))
-                    || ((Math.abs((nX + canX) - ascBackgroundWidth / 2) <= (CAN_WIDTH) / (2 * scale) || Math.abs((nX + canX) + ascBackgroundWidth / 2) <= (CAN_WIDTH) / (2 * scale))
-                        && (Math.abs((nY + canY) - ascBackgroundHeight / 2) <= (CAN_HEIGHT) / (2 * scale) || Math.abs((nY + canY) + ascBackgroundHeight / 2) <= (CAN_HEIGHT) / (2 * scale)))) {
+                if (Math.abs(nX + canX) <= CAN_WIDTH / scale && Math.abs(nY + canY) <= CAN_HEIGHT / scale) {
+                    // || ((Math.abs((nX + canX) - ascBackgroundWidth / 2) <= (CAN_WIDTH) / (2 * scale) || Math.abs((nX + canX) + ascBackgroundWidth / 2) <= (CAN_WIDTH) / (2 * scale))
+                    // && (Math.abs((nY + canY) - ascBackgroundHeight / 2) <= (CAN_HEIGHT) / (2 * scale) || Math.abs((nY + canY) + ascBackgroundHeight / 2) <= (CAN_HEIGHT) / (2 * scale)))) {
                     ctx.drawImage(ascBackgroundSrc, nX - (ascBackgroundWidth / 2), nY - (ascBackgroundHeight / 2), ascBackgroundWidth, ascBackgroundHeight);
+
+                    if (node.ascName !== ascClassname) {
+                        ctx.globalCompositeOperation = 'source-atop';
+                        ctx.fillStyle = `#00000055`;
+
+                        ctx.translate(nX, nY);
+                        ctx.beginPath();
+                        ctx.arc(0, 0, Math.max(ascBackgroundWidth, ascBackgroundHeight) / 2, 0, 2 * Math.PI);
+                        ctx.fill();
+                        ctx.translate(-nX, -nY);
+                        ctx.globalCompositeOperation = 'destination-over';
+                    }
                 }
             });
         }

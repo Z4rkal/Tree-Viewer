@@ -4,6 +4,8 @@ This project is a web-based skill tree viewer for [Path of Exile](https://www.pa
 
 I built this project partially as a way for me to teach myself how to work with HTML5 canvases, and partially in the hopes of someday building it out into a web-based alternative to [@Openarl's](https://github.com/Openarl) [Path of Building](https://github.com/Openarl/PathOfBuilding), which has been and will probably continue to be the community's most popular build planning tool due to the incredible amount of work put into it.
 
+![Example Screenshot](/screenshots/TreeExample.png?raw=true)
+
 #
 ### Current Functionality
 

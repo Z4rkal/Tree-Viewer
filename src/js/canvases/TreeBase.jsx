@@ -19,14 +19,14 @@ class TreeBase extends Component {
         const { loaded: loadedThen } = prevProps;
 
         if (!loadedThen && loadedNow)
-            this.intializeGroupCanvases();
+            this.initializeGroupCanvases();
         else if (loadedThen && loadedNow)
             this.handleTreeChanges(prevProps);
 
         this.updateCanvas();
     }
 
-    intializeGroupCanvases() {
+    initializeGroupCanvases() {
         const { groups } = this.props;
         Object.values(groups).map((group) => {
             this.drawGroup(group, 0);
@@ -352,9 +352,15 @@ class TreeBase extends Component {
         const { keystone } = this.props.sizeConstants;
         const scaleAtCurrentZoomLevel = imageZoomLevels[zoomLvl];
 
-        let gCanvas = document.createElement('canvas');
-        gCanvas.width = 2 * Math.max(group.x - group.min_x, group.max_x - group.x) + keystone[`z${zoomLvl}`].w;
-        gCanvas.height = 2 * Math.max(group.y - group.min_y, group.max_y - group.y) + keystone[`z${zoomLvl}`].h;
+        let gCanvas;
+        if (!this.groupCanvases[group.id] || !this.groupCanvases[group.id][zoomLvl]) {
+            gCanvas = document.createElement('canvas');
+            gCanvas.width = 2 * Math.max(group.x - group.min_x, group.max_x - group.x) + keystone[`z${zoomLvl}`].w;
+            gCanvas.height = 2 * Math.max(group.y - group.min_y, group.max_y - group.y) + keystone[`z${zoomLvl}`].h;
+        }
+        else {
+            gCanvas = this.groupCanvases[group.id][zoomLvl];
+        }
 
         let ctx = gCanvas.getContext('2d');
         ctx.clearRect(0, 0, gCanvas.width, gCanvas.height);

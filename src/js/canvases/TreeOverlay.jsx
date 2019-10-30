@@ -35,9 +35,38 @@ class TreeOverlay extends Component {
 
         ctx.clearRect(0, 0, CAN_WIDTH, CAN_HEIGHT);
 
+        this.highlightSearchNodes();
         if (isHovering) {
             this.drawPathToHoveredNode();
             this.displayHoverTooltip();
+        }
+    }
+
+    highlightSearchNodes() {
+        const { CAN_WIDTH, CAN_HEIGHT } = this.props;
+        const { canX, canY, scale } = this.props;
+        const { searchedNodes, nodes } = this.props;
+
+        if (searchedNodes.length !== 0) {
+            const canvas = this.canvasRef.current;
+            const ctx = canvas.getContext('2d');
+
+            const styleHolder = ctx.fillStyle;
+            ctx.fillStyle = '#ffbf2055';
+            ctx.translate(CAN_WIDTH / 2 + canX * scale, CAN_HEIGHT / 2 + canY * scale);
+            ctx.scale(scale, scale)
+
+            searchedNodes.map((nodeId) => {
+                const node = nodes[nodeId];
+
+                ctx.beginPath();
+                ctx.arc(node.nX, node.nY, 100, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+
+            ctx.scale(1 / scale, 1 / scale);
+            ctx.translate(-(CAN_WIDTH / 2 + canX * scale), -(CAN_HEIGHT / 2 + canY * scale));
+            ctx.fillStyle = styleHolder;
         }
     }
 

@@ -53,6 +53,11 @@ class Readme extends Component {
                             The dropdowns above the canvas can be used to change your starting class and ascendancy,
                             and the import and export buttons below the canvas can be used to import/export your build.
                     </p>
+                        <p className='readme-body'>
+                            The search field below the canvas can be used to look for specific nodes; 
+                            you can type in something like 'minions deal #% increased damage' and all nodes that contain that text will be highlighted.
+                            
+                        </p>
                         <h3 className='readme-head'>Useful Links:</h3>
                         <p className='readme-body'>
                             <a href='https://pathofexile.gamepedia.com/Path_of_Exile_Wiki' className='readme-link'>Path of Exile Gamepedia</a>

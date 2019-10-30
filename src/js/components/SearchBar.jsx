@@ -8,6 +8,9 @@ class SearchBar extends Component {
             search: ''
         }
 
+        //We'll use a 250ms timeout so that we aren't running the search function every single time the input changes.
+        //This should be short enough (around human reaction time) to not be very noticeable, 
+        //but long enough to improve performance somewhat
         this.searchTimeout = null;
 
         this.updateSearch = this.updateSearch.bind(this);
@@ -17,6 +20,7 @@ class SearchBar extends Component {
     updateSearch(value) {
         this.setState(() => {
             if (this.searchTimeout !== null) clearTimeout(this.searchTimeout);
+            //The searchTimeout will run the handleSearch function 250ms after the user stops typing in the search field
             this.searchTimeout = setTimeout(() => this.handleSearch(), 250);
             return { search: value }
         })
@@ -25,19 +29,27 @@ class SearchBar extends Component {
     handleSearch() {
         const { search } = this.state;
         const { nodes } = this.props;
+        const { externalUpdater } = this.props;
 
-        const searchPat = new RegExp(search.replace(/\d+/g,'\d+'), 'i');
+        let matchingNodes = [];
 
-        let matchingNodes = {};
+        if (search !== '') {
+            const searchPat = new RegExp(search.replace(/[\d#]+/g, '\\d+'), 'i');
 
-        Object.values(nodes).map((node) => {
-            const nodeId = node.id;
-            const desc = node.fullString;
+            Object.values(nodes).map((node) => {
+                const nodeId = node.id;
+                const desc = node.fullString;
 
-            if (searchPat.test(desc)) matchingNodes[nodeId] = true;
-        });
+                if (searchPat.test(desc)) matchingNodes.push(nodeId);
+            });
+        }
 
-        console.log(matchingNodes);
+        if (externalUpdater !== undefined && typeof externalUpdater === 'function') {
+            externalUpdater(matchingNodes);
+        }
+        else {
+            console.log(matchingNodes);
+        }
     }
 
     render() {

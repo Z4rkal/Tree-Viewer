@@ -50,7 +50,8 @@ class SkillTree extends Component {
             latestCursorY: 0,
             loaded: false,
             treeActionIndex: 0,
-            treeActions: []
+            treeActions: [],
+            searchedNodes: []
         };
 
         this.handleDecode = this.handleDecode.bind(this);
@@ -71,6 +72,7 @@ class SkillTree extends Component {
         this.keyEventHandler = this.keyEventHandler.bind(this);
         this.handleUndo = this.handleUndo.bind(this);
         this.handleRedo = this.handleRedo.bind(this);
+        this.updateSearchNodes = this.updateSearchNodes.bind(this);
     }
 
     componentDidMount() {
@@ -1100,11 +1102,18 @@ class SkillTree extends Component {
         });
     }
 
+    updateSearchNodes(nodes) {
+        this.setState(() => {
+            return { searchedNodes: [...nodes] };
+        });
+    }
+
     render() {
         const { groups, nodes, paths, startingNodes, ascStartingNodes, hitPoints, sizeConstants, loaded } = this.state;
         const { canX, canY, scale, zoomLvl, isDragging, canClick } = this.state;
         const { pointsUsed, ascPointsUsed, classStartingNodeId, ascClassId } = this.state;
         const { activeNodes, ascClassname } = this.state;
+        const { searchedNodes } = this.state;
 
         return (
             <>
@@ -1119,7 +1128,7 @@ class SkillTree extends Component {
                             groups={groups} nodes={nodes} paths={paths} startingNodes={startingNodes} ascStartingNodes={ascStartingNodes} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl}
                             activeNodes={activeNodes} ascClassname={ascClassname} />
-                        <TreeOverlay CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT}
+                        <TreeOverlay CAN_WIDTH={CAN_WIDTH} CAN_HEIGHT={CAN_HEIGHT} searchedNodes={searchedNodes}
                             nodes={nodes} paths={paths} hitPoints={hitPoints} sizeConstants={sizeConstants} loaded={loaded}
                             canX={canX} canY={canY} scale={scale} zoomLvl={zoomLvl} isDragging={isDragging} canClick={canClick}
                             handleCanvasMouseDown={this.handleCanvasMouseDown} handleDrag={this.handleDrag} handleCanvasMouseUp={this.handleCanvasMouseUp} handleZoom={this.handleZoom} checkHit={this.checkHit} handleNodeClick={this.handleNodeClick}
@@ -1127,7 +1136,7 @@ class SkillTree extends Component {
                     </div>
                     <div id='lower-tree-space' className='tree-row'>
                         <PostCanvasContent loaded={loaded} nodes={nodes}
-                            handleDecode={this.handleDecode} handleEncode={this.handleEncode} />
+                            handleDecode={this.handleDecode} handleEncode={this.handleEncode} updateSearchNodes={this.updateSearchNodes} />
                     </div>
                 </div>
             </>
@@ -1229,7 +1238,7 @@ export default SkillTree;
         -Improve the load screen
         -Add shift queueing to hovering nodes
         -Maybe add tiles for more speed improvements --> 10/30/19 maybe not worth? Speed is already acceptable and it'll require a large refactor
-        -Search bar,
+        -*DONE* Search bar,
         -Something that tallies all your stats somewhere
         -*DONE* Gray out ascendancy classes that aren't selected
         -Add str/int/dex around the character plaque

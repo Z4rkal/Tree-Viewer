@@ -81,6 +81,7 @@ class PostCanvasContent extends Component {
     render() {
         const { errStr, isErr, exportStr, exportDisplay } = this.state;
         const { loaded, nodes } = this.props;
+        const { updateSearchNodes } = this.props;
 
         if (!loaded)
             return (
@@ -108,7 +109,7 @@ class PostCanvasContent extends Component {
                     <button onClick={() => this.closePopout()}>Close</button>
                 </div>
                 <div id='search-bar-container' className='canvas-info-container'>
-                    <SearchBar nodes={nodes} />
+                    <SearchBar nodes={nodes} externalUpdater={updateSearchNodes} />
                 </div>
             </>
         );

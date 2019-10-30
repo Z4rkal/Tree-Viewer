@@ -53,12 +53,17 @@
 }
 
 .canvas-info-container {
-  p, label {
+  p,
+  label {
     display: inline;
   }
 
-  > *:nth-child(n + 2):not(button, #search-bar) {
+  > *:nth-child(n + 2):not(button) {
     margin-left: 2rem;
+  }
+
+  > #search-bar {
+    margin-left: 0;
   }
 
   margin-right: 2rem;
@@ -105,7 +110,8 @@
   background-color: #333333;
   border: 2px solid #dddddd;
 
-  .readme-head, .readme-body {
+  .readme-head,
+  .readme-body {
     padding-left: 20px;
     padding-right: 20px;
   }

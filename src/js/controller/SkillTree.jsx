@@ -1126,7 +1126,7 @@ class SkillTree extends Component {
                             findPathToNode={this.findPathToNode} />
                     </div>
                     <div id='lower-tree-space' className='tree-row'>
-                        <PostCanvasContent loaded={loaded}
+                        <PostCanvasContent loaded={loaded} nodes={nodes}
                             handleDecode={this.handleDecode} handleEncode={this.handleEncode} />
                     </div>
                 </div>

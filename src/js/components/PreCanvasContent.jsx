@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Readme from './Readme';
 
 class PreCanvasContent extends Component {
     render() {
@@ -42,6 +43,9 @@ class PreCanvasContent extends Component {
                             <option key={`${node.classId} ${node.ascId}`} value={node.ascId}>{node.ascName}</option>
                         ))}
                     </select>
+                </div>
+                <div id='help-button'>
+                    <Readme />
                 </div>
             </>
         );

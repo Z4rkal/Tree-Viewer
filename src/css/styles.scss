@@ -57,7 +57,7 @@
     display: inline;
   }
 
-  > *:nth-child(n+2):not(button) {
+  > *:nth-child(n + 2):not(button) {
     margin-left: 2rem;
   }
 
@@ -65,34 +65,64 @@
 }
 
 #export-bar {
-    max-width: 100%;
-    overflow: hidden;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .info-popout {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    
-    width: 40%;
-    max-width: 40%;
-    height: 30%;
-    max-height: 30%;
-    margin-left: -20%;
-    margin-top: -15%;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+
+  width: 40%;
+  max-width: 40%;
+  height: 30%;
+  max-height: 30%;
+  margin-left: -20%;
+  margin-top: -15%;
 }
 
 #export-url-container {
-    display: flex;
-    flex-wrap: wrap;
-    background-color: #333333;
-    border: 2px solid #dddddd;
-    color: #f7c8d8;
-    word-wrap: break-word;
+  display: flex;
+  flex-wrap: wrap;
+  background-color: #333333;
+  border: 2px solid #dddddd;
+  color: #f7c8d8;
+  word-wrap: break-word;
 
-    > button {
-        height: fit-content;
-        margin-left: auto;
-        margin-top: auto;
-    }
+  > button {
+    height: fit-content;
+    margin-left: auto;
+    margin-top: auto;
+  }
+}
+
+#readme-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  background-color: #333333;
+  border: 2px solid #dddddd;
+
+  .readme-head, .readme-body {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .readme-link {
+    color: #ffffff;
+  }
+}
+
+#summon-readme {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+}
+
+#close-readme {
+  position: absolute;
+  bottom: 0.3rem;
+  right: 0.3rem;
 }

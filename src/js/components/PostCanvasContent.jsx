@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import SearchBar from './SearchBar';
 
 class PostCanvasContent extends Component {
     constructor() {
@@ -105,6 +106,9 @@ class PostCanvasContent extends Component {
                 <div id='export-url-container' className='info-popout' style={exportDisplay ? {} : { display: 'none' }}>
                     <p id='export-bar' className='url-bar'>{exportStr}</p>
                     <button onClick={() => this.closePopout()}>Close</button>
+                </div>
+                <div id='search-bar-container' className='canvas-info-container'>
+                    <SearchBar />
                 </div>
             </>
         );

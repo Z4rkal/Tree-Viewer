@@ -53,11 +53,11 @@
 }
 
 .canvas-info-container {
-  p {
+  p, label {
     display: inline;
   }
 
-  > *:nth-child(n + 2):not(button) {
+  > *:nth-child(n + 2):not(button, #search-bar) {
     margin-left: 2rem;
   }
 

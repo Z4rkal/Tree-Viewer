@@ -1228,9 +1228,11 @@ export default SkillTree;
     Last things I want to add before putting this down for a bit:
         -Improve the load screen
         -Add shift queueing to hovering nodes
-        -Maybe add tiles for more speed improvements
+        -Maybe add tiles for more speed improvements --> 10/30/19 maybe not worth? Speed is already acceptable and it'll require a large refactor
         -Search bar,
         -Something that tallies all your stats somewhere
         -*DONE* Gray out ascendancy classes that aren't selected
         -Add str/int/dex around the character plaque
+
+    10/30/19 --> added a readme, which was sorely needed
 */

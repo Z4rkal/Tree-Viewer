@@ -25,17 +25,19 @@
   },
   "homepage": "https://github.com/Z4rkal/Tree-Viewer#readme",
   "dependencies": {
-    "@babel/core": "^7.6.2",
-    "@babel/preset-react": "^7.0.0",
-    "@babel/runtime": "^7.6.2",
+    "@babel/core": "^7.7.2",
+    "@babel/preset-react": "^7.7.0",
+    "@babel/runtime": "^7.7.2",
     "buffer": "^5.4.3",
     "express": "^4.17.1",
     "js-cookie": "^2.2.1",
-    "react": "^16.9.0",
+    "react": "^16.11.0",
     "react-dom": "^16.9.0",
-    "sass": "^1.23.0-module.beta.1"
+    "react-redux": "^7.1.3",
+    "redux": "^4.0.4",
+    "sass": "^1.23.3"
   },
   "devDependencies": {
-    "parcel": "^1.12.3"
+    "parcel": "^1.12.4"
   }
 }

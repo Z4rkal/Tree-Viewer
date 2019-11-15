@@ -52,7 +52,7 @@ class App extends Component {
         if (errorMsg)
             return (
                 <div id='app-container'>
-                    {`${errorMsg.name} : ${errorMsg.message}${errorMsg.fileName ? ` : ${errorMsg.fileName}${errorMsg.lineNumber ? ` on line ${errorMsg.lineNumber}` : ``}` : ``}`}
+                    {`${errorMsg.name} : ${errorMsg.message}\n\n\n${errorMsg.stack}`}
                     <button id='clear-state' onClick={() => this.clearErr()}>Reset</button>
                 </div>
             )

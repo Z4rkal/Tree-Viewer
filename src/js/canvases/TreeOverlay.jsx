@@ -107,7 +107,12 @@ class TreeOverlay extends Component {
 
         const { pathToHoveredNode } = this.state;
         if (pathToHoveredNode.length !== 0) {
-            ctx.save();
+            try {
+                ctx.save();
+            }
+            catch (error) {
+                throw new Error(`ctx.save() failed in drawPathToHoveredNode : Failed at 111 in TreeOverlay.jsx`)
+            }
             ctx.setTransform(scale, 0, 0, scale, CAN_WIDTH / 2 + canX * scale, CAN_HEIGHT / 2 + canY * scale);
 
             ctx.strokeStyle = '#f7c8d8dd';

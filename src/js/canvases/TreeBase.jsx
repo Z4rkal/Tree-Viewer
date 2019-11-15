@@ -93,7 +93,12 @@ class TreeBase extends Component {
         const ctx = canvas.getContext('2d');
 
         if (!this.props.loaded) {
-            ctx.save();
+            try {
+                ctx.save();
+            }
+            catch (error) {
+                throw new Error(`ctx.save() failed in the loading screen : Failed at 97 in TreeBase.jsx`)
+            }
             ctx.fillStyle = '#f7c8d8';
             ctx.fillRect(min_x - 1000, min_y - 1000, max_x + Math.abs(min_x) + 2000, max_y + Math.abs(min_y) + 2000);
 
@@ -463,7 +468,12 @@ class TreeBase extends Component {
 
                 ctx.globalCompositeOperation = 'destination-over';
                 arcs.map((arc) => {
-                    ctx.save();
+                    try {
+                        ctx.save();
+                    }
+                    catch (error) {
+                        throw new Error(`ctx.save() failed in arcs.map : Failed at 472 in TreeBase.jsx`)
+                    }
                     const { orbit, radius, x, y, ø, øBetween, startId, outId, gt90 } = arc;
 
                     const arcId = `Orbit${orbit}${nodes[startId].active ? (nodes[outId].active ? 'Active' : 'Intermediate') : (nodes[outId].active ? 'Intermediate' : 'Normal')}-${zoomLvl}`;

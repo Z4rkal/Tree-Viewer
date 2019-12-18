@@ -97,7 +97,7 @@ class TreeBase extends Component {
                 ctx.save();
             }
             catch (error) {
-                throw new Error(`ctx.save() failed in the loading screen : Failed at 97 in TreeBase.jsx`)
+                throw new Error(`ctx.save() failed in the loading screen : Failed at 97 in TreeBase.jsx\ncanvas: ${canvas}\nctx: ${ctx}\nprops: ${this.props}\n~~~~~~~~~~~~~~~~~~~~~~~~\nERROR: ${error}`)
             }
             ctx.fillStyle = '#f7c8d8';
             ctx.fillRect(min_x - 1000, min_y - 1000, max_x + Math.abs(min_x) + 2000, max_y + Math.abs(min_y) + 2000);
@@ -120,7 +120,12 @@ class TreeBase extends Component {
         //Redraw whole tree, later I'd like to only redraw the specific things that change if the state change
         //is something like a node being taken or the search bar updating
         ctx.setTransform(scale, 0, 0, scale, CAN_WIDTH / 2 + canX * scale, CAN_HEIGHT / 2 + canY * scale);
+        try {
         ctx.clearRect(-(CAN_WIDTH / (2 * scale) + canX), -(CAN_HEIGHT / (2 * scale) + canY), Math.round(CAN_WIDTH / scale), Math.round(CAN_HEIGHT / scale));
+        }
+        catch(error) {
+            throw new Error(`Failed at ctx.clearRect, line 124 of TreeBase.jsx\ncanvas: ${canvas}\nctx: ${ctx}\nCAN_WIDTH: ${CAN_WIDTH}\nCAN_HEIGHT: ${CAN_HEIGHT}\ncanX: ${canX}\ncanY: ${canY}\nscale: ${scale}\nprops: ${this.props}\n~~~~~~~~~~~~~~~~~~~~~~~~\nERROR: ${error}`);
+        }
         this.drawTreeStructure();
         this.drawBackGround();
     }

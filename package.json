@@ -29,7 +29,7 @@
     "@babel/preset-react": "^7.7.0",
     "@babel/runtime": "^7.7.2",
     "buffer": "^5.4.3",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "js-cookie": "^2.2.1",
     "react": "^16.11.0",
     "react-dom": "^16.9.0",

@@ -38,6 +38,6 @@
     "sass": "^1.23.3"
   },
   "devDependencies": {
-    "parcel": "^1.12.4"
+    "parcel": "^2.8.2"
   }
 }
